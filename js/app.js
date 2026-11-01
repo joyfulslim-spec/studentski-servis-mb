@@ -24,15 +24,60 @@
     setTimeout(() => t.remove(), 2800);
   }
 
-  /* ---------- Stanje (shranjeno v brskalniku, simulira strežnik) ---------- */
-  const KEY = "ssmb-prototip";
-  const DEFAULT = { prijavljen: false, clan: true, status: { veljaven: false, do: "30. 9. 2026" }, prijave: [], napotnice: [], piskotki: null };
+  /* ---------- »Baza« v brskalniku ----------
+     Prototip nima strežnika, zato so računi, oglasi, prijave in napotnice shranjeni v localStorage.
+     Podatki veljajo na napravi in v brskalniku, kjer so bili vpisani. V pravi aplikaciji bi te
+     funkcije klicale API (/api/prijava, /api/dela, /api/napotnica – glej dokumentacijo, pogl. 7.3). */
+  const KEY = "ssmb-prototip-v2";
+
+  // Zgoščevanje gesla (cyrb53). V pravi aplikaciji: bcrypt/argon2 na strežniku.
+  function hash(str) {
+    let h1 = 0xdeadbeef ^ 7, h2 = 0x41c6ce57 ^ 7;
+    for (let i = 0, ch; i < str.length; i++) { ch = str.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
+  }
+  const salted = (email, pass) => hash(email.toLowerCase() + "|" + pass);
+
+  function seed() {
+    return {
+      piskotki: null, session: null,
+      users: SS.DEMO_ACCOUNTS.map(a => { const { geslo, ...u } = a; return { ...u, geslo: salted(a.email, geslo) }; }),
+      jobs: [], applications: SS.DEMO_APPLICATIONS.map(a => ({ ...a })), referrals: [],
+    };
+  }
   function load() {
-    try { return Object.assign({}, DEFAULT, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch (e) { return { ...DEFAULT }; }
+    try { const s = JSON.parse(localStorage.getItem(KEY) || "null"); if (s && s.users) return s; } catch (e) {}
+    return seed();
   }
   let state = load();
-  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* zasebni način – stanje velja le do osvežitve */ } }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* zasebni način – podatki veljajo do osvežitve */ } }
+  save();
   SS.reset = () => { try { localStorage.removeItem(KEY); } catch (e) {} location.href = "index.html"; };
+
+  const uid = p => p + "-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const me = () => state.users.find(u => u.id === state.session) || null;
+  const isStudent = () => (me() || {}).tip === "student";
+  const isCompany = () => (me() || {}).tip === "podjetje";
+  const findUser = email => state.users.find(u => u.email.toLowerCase() === String(email).trim().toLowerCase());
+  const allJobs = () => state.jobs.filter(j => j.aktiven !== false).concat(SS.JOBS);
+  const jobById = id => state.jobs.concat(SS.JOBS).find(j => String(j.id) === String(id));
+  const companyJobs = c => state.jobs.concat(SS.JOBS).filter(j => j.ownerId === c.id || j.podjetje === c.naziv);
+  const myApplication = jobId => { const u = me(); return u && state.applications.find(a => a.jobId === jobId && a.studentId === u.id); };
+  const fullName = u => u.tip === "podjetje" ? u.naziv : `${u.ime} ${u.priimek || ""}`.trim();
+  const login = u => { state.session = u.id; save(); };
+  const nextUrl = fallback => { const n = params.get("next"); return n && /^[a-z0-9-]+\.html(\?[\w=&%.-]*)?$/i.test(n) ? n : fallback; };
+  const here_q = () => encodeURIComponent((location.pathname.split("/").pop() || "index.html") + location.search);
+
+  /* Kartica »prijavi se«, ko stran zahteva račun */
+  function needLogin(el, title, text, tip) {
+    const next = here_q();
+    el.innerHTML = `<div class="card form-card stack"><h2>${title}</h2><p class="muted">${text}</p><div class="form-actions">
+      <a class="btn btn-primary" href="prijava.html?next=${next}">Prijava</a>
+      <a class="btn btn-outline" href="${tip === "podjetje" ? "vpis-partnerja.html" : "vclani-se.html"}?next=${next}">${tip === "podjetje" ? "Vpis podjetja" : "Včlani se"}</a></div></div>`;
+  }
+  const statusBadge = s => s === "Sprejeta" ? "tag-ok" : s === "Zavrnjena" ? "tag-red" : "tag-warn";
 
   /* ---------- Ikone ---------- */
   const I = {
@@ -73,8 +118,9 @@
   const here = location.pathname.split("/").pop() || "index.html";
 
   function headerHTML() {
-    const acc = state.prijavljen
-      ? `<a class="btn btn-outline account-btn" href="moj-racun.html" aria-label="Moj račun">${I.user}<span class="label">Moj račun</span></a>`
+    const u = me();
+    const acc = u
+      ? `<a class="btn btn-outline account-btn" href="moj-racun.html" aria-label="Moj račun">${I.user}<span class="label">${esc(u.tip === "podjetje" ? u.naziv : u.ime)}</span></a>`
       : `<a class="btn btn-outline account-btn" href="prijava.html" aria-label="Prijava">${I.user}<span class="label">Prijava</span></a>`;
     return `
 <a class="skip" href="#main">Skoči na vsebino</a>
@@ -131,7 +177,9 @@
   }
 
   function bottomBarHTML() {
-    const items = [["index.html", "Domov", I.home], ["prosta-dela.html", "Dela", I.search], ["napotnica.html", "Napotnica", I.doc], [state.prijavljen ? "moj-racun.html" : "prijava.html", "Moj račun", I.user]];
+    const items = [["index.html", "Domov", I.home], ["prosta-dela.html", "Dela", I.search],
+      isCompany() ? ["oddaja-oglasa.html", "Nov oglas", I.doc] : ["napotnica.html", "Napotnica", I.doc],
+      [me() ? "moj-racun.html" : "prijava.html", "Moj račun", I.user]];
     return `<nav class="bottom-bar" aria-label="Hitri meni">${items.map(x => `<a href="${x[0]}" class="${x[0] === here ? "active" : ""}">${x[2]}${x[1]}</a>`).join("")}</nav>`;
   }
 
@@ -250,17 +298,18 @@
 
   /* ---------- Skupni gradniki ---------- */
   function jobCard(j) {
-    const applied = state.prijave.includes(j.id);
+    const app = typeof j.id === "number" ? myApplication(j.id) : null;
+    const applied = !!app;
     return `<a class="job-card" href="delo.html?id=${j.id}">
       <div class="job-top">
         <div class="stack-sm" style="gap:4px;min-width:0"><span class="job-code">Šifra ${j.id} · ${esc(j.objavljeno)}</span><h3>${esc(j.naziv)}</h3></div>
         <div class="pay"><b>${eur(j.urna)}</b><small>na uro, bruto</small></div>
       </div>
       <div class="meta"><span>${I.building}${esc(j.podjetje)}</span><span>${I.pin}${esc(j.kraj)}</span><span>${I.clock}${esc(j.cas)}</span></div>
-      <div class="tags"><span class="tag">${esc(j.kat)}</span>${j.dijaki ? '<span class="tag tag-ok">Tudi za dijake</span>' : ""}${applied ? '<span class="tag tag-red">Prijavljen</span>' : ""}</div>
+      <div class="tags"><span class="tag">${esc(j.kat)}</span>${j.dijaki ? '<span class="tag tag-ok">Tudi za dijake</span>' : ""}${applied ? `<span class="tag ${statusBadge(app.status)}">Prijava: ${esc(app.status.toLowerCase())}</span>` : ""}${j.ownerId ? '<span class="tag tag-red">Novo</span>' : ""}</div>
     </a>`;
   }
-  const statusText = () => state.status.veljaven ? `Status veljaven do ${state.status.do}` : `Status je potekel ${state.status.do}`;
+  const statusText = (u = me()) => !u || !u.status ? "" : u.status.veljaven ? `Status veljaven do ${u.status.do}` : `Status je potekel ${u.status.do}`;
 
   /* Večkoračni obrazec: koraki so <section class="step">, števec je <ol class="stepper"> */
   function wizard(form, { onStep, onFinish }) {
@@ -294,6 +343,9 @@
       if (el.required && !v) msg = el.type === "checkbox" ? "To polje je obvezno." : "Izpolni to polje.";
       else if (v && el.dataset.pattern && !new RegExp(el.dataset.pattern).test(el.value.replace(/\s/g, ""))) msg = el.dataset.msg || "Preveri vnos.";
       else if (v && el.type === "email" && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) msg = "Vpiši veljaven e-poštni naslov (npr. ime@primer.si).";
+      else if (v && el.dataset.minlen && v.length < Number(el.dataset.minlen)) msg = `Geslo mora imeti vsaj ${el.dataset.minlen} znakov.`;
+      else if (el.dataset.match && el.value !== $(el.dataset.match).value) msg = "Gesli se ne ujemata.";
+      else if (v && "uniqueEmail" in el.dataset && findUser(v)) msg = "Račun s tem e-naslovom že obstaja. Prijavi se ali uporabi drug naslov.";
       el.setAttribute("aria-invalid", msg ? "true" : "false");
       if (msg) {
         const p = document.createElement("p"); p.className = "error"; p.dataset.auto = ""; p.textContent = msg;
@@ -320,6 +372,13 @@
     return () => zone.dataset.name || "";
   }
 
+  /* Po prijavi ali odjavi osveži gumb za račun in spodnjo vrstico brez ponovnega nalaganja strani */
+  function refreshChrome() {
+    const a = $(".account-btn"), u = me();
+    if (a) { a.href = u ? "moj-racun.html" : "prijava.html"; $(".label", a).textContent = u ? (u.tip === "podjetje" ? u.naziv : u.ime) : "Prijava"; }
+    const bb = $(".bottom-bar"); if (bb) bb.outerHTML = bottomBarHTML();
+  }
+
   function successHTML(title, text, actions) {
     return `<div class="success"><div class="tick">${I.tick}</div><h2>${title}</h2><p class="lead">${text}</p><div class="form-actions" style="width:100%;max-width:520px">${actions}</div></div>`;
   }
@@ -328,9 +387,9 @@
   const PAGES = {};
 
   PAGES.home = () => {
-    $("#latestJobs").innerHTML = SS.JOBS.slice(0, 4).map(jobCard).join("");
+    $("#latestJobs").innerHTML = allJobs().slice(0, 4).map(jobCard).join("");
     $("#homeNews").innerHTML = SS.NEWS.slice(0, 3).map(n => `<a class="news-card" href="novice.html#n${n.id}"><time>${n.datum}</time><span class="tag" style="justify-self:start">${esc(n.kat)}</span><h3>${esc(n.naslov)}</h3><p class="muted small">${esc(n.povzetek)}</p></a>`).join("");
-    $("#jobCount").textContent = SS.JOBS.length;
+    $("#jobCount").textContent = allJobs().length;
     const sel = $("#hRegija"); sel.innerHTML += SS.REGIJE.map(r => `<option>${r}</option>`).join("");
     const kat = $("#hKat"); kat.innerHTML += SS.KATEGORIJE.map(r => `<option>${r}</option>`).join("");
 
@@ -350,11 +409,16 @@
       };
       timer = setTimeout(tick, 1200);
     }
-    if (state.prijavljen) {
-      const sb = $("#statusBanner"); sb.hidden = false;
-      sb.classList.toggle("ok", state.status.veljaven);
-      sb.innerHTML = `<div class="stack-sm" style="gap:2px"><b>Živjo, ${esc(SS.DEMO_USER.ime.split(" ")[0])}!</b><span class="small">${statusText()}${state.status.veljaven ? "" : " – brez veljavnega statusa ne moreš naročiti napotnice."}</span></div>
-        ${state.status.veljaven ? `<a class="btn btn-outline btn-sm" href="moj-racun.html">Moj račun</a>` : `<a class="btn btn-primary btn-sm" href="podaljsaj-status.html">Podaljšaj status</a>`}`;
+    const u = me(), sb = $("#statusBanner");
+    if (u && u.tip === "student") {
+      sb.hidden = false; sb.classList.toggle("ok", u.status.veljaven);
+      sb.innerHTML = `<div class="stack-sm" style="gap:2px"><b>Živjo, ${esc(u.ime)}!</b><span class="small">${statusText(u)}${u.status.veljaven ? "" : " – brez veljavnega statusa ne moreš naročiti napotnice."}</span></div>
+        ${u.status.veljaven ? `<a class="btn btn-outline btn-sm" href="moj-racun.html">Moj račun</a>` : `<a class="btn btn-primary btn-sm" href="podaljsaj-status.html">Podaljšaj status</a>`}`;
+    } else if (u) {
+      const ids = companyJobs(u).map(j => j.id), nove = state.applications.filter(a => ids.includes(a.jobId) && a.status === "Oddana").length;
+      sb.hidden = false; sb.classList.add("ok");
+      sb.innerHTML = `<div class="stack-sm" style="gap:2px"><b>Pozdravljeni, ${esc(u.naziv)}!</b><span class="small">${nove ? `Imate ${nove} ${nove === 1 ? "novo prijavo" : nove === 2 ? "novi prijavi" : "nove prijave"} na vaše oglase.` : "Ni novih prijav."}</span></div>
+        <div class="row"><a class="btn btn-primary btn-sm" href="moj-racun.html#prijave">Poglej prijave</a><a class="btn btn-outline btn-sm" href="oddaja-oglasa.html">Nov oglas</a></div>`;
     }
   };
 
@@ -372,7 +436,7 @@
 
     function run() {
       const q = f.q.trim().toLowerCase();
-      let list = SS.JOBS.filter(j =>
+      let list = allJobs().filter(j =>
         (!q || `${j.naziv} ${j.podjetje} ${j.kat} ${j.kraj} ${j.id}`.toLowerCase().includes(q)) &&
         (!f.regija || j.regija === f.regija) && (!f.kat || j.kat === f.kat) &&
         (!f.min || j.urna >= Number(f.min)) && (!f.dijaki || j.dijaki));
@@ -402,38 +466,66 @@
   };
 
   PAGES.job = () => {
-    const j = SS.JOBS.find(x => x.id === Number(params.get("id"))) || SS.JOBS[0];
+    const j = jobById(params.get("id")) || SS.JOBS[0];
     document.title = `${j.naziv} – Prosta dela – Študentski servis Maribor`;
     $("#jTitle").textContent = j.naziv; $("#jCrumb").textContent = j.naziv;
     $("#jSub").textContent = `${j.podjetje} · ${j.kraj}`;
-    $("#jPhoto").src = "img/" + j.img;
+    $("#jPhoto").src = "img/" + (j.img || "podjetja.jpg");
+    const list = (t, arr) => arr && arr.length ? `<h3>${t}</h3><ul>${arr.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : "";
     $("#jBody").innerHTML = `
-      <div class="tags"><span class="tag">${esc(j.kat)}</span>${j.dijaki ? '<span class="tag tag-ok">Tudi za dijake</span>' : '<span class="tag tag-warn">Samo za študente</span>'}<span class="tag">Šifra ${j.id}</span></div>
-      <p>${esc(j.opis)}</p>
-      <h3>Kaj boš delal</h3><ul>${j.naloge.map(x => `<li>${esc(x)}</li>`).join("")}</ul>
-      <h3>Kaj pričakujemo</h3><ul>${j.pogoji.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`;
+      <div class="tags"><span class="tag">${esc(j.kat)}</span>${j.dijaki ? '<span class="tag tag-ok">Tudi za dijake</span>' : '<span class="tag tag-warn">Samo za študente</span>'}<span class="tag">Šifra ${j.id}</span>${j.aktiven === false ? '<span class="tag tag-red">Oglas je zaključen</span>' : ""}</div>
+      <p style="white-space:pre-line">${esc(j.opis)}</p>
+      ${list("Kaj boš delal", j.naloge)}${list("Kaj pričakujemo", j.pogoji)}`;
     $("#jFacts").innerHTML = `<dt>Plačilo</dt><dd>${eur(j.urna)} /h bruto<br><span class="muted small">≈ ${eur(j.urna * (1 - SS.STOPNJE.prispevkiStudent))} /h neto</span></dd>
-      <dt>Kraj</dt><dd>${esc(j.kraj)}</dd><dt>Delovni čas</dt><dd>${esc(j.cas)}</dd><dt>Trajanje</dt><dd>${esc(j.trajanje)}</dd><dt>Začetek</dt><dd>${esc(j.od)}</dd><dt>Objavljeno</dt><dd>${esc(j.objavljeno)}</dd>`;
-    $("#similar").innerHTML = SS.JOBS.filter(x => x.kat === j.kat && x.id !== j.id).concat(SS.JOBS.filter(x => x.regija === j.regija && x.kat !== j.kat && x.id !== j.id)).slice(0, 2).map(jobCard).join("");
+      <dt>Kraj</dt><dd>${esc(j.kraj)}</dd><dt>Delovni čas</dt><dd>${esc(j.cas)}</dd><dt>Trajanje</dt><dd>${esc(j.trajanje || "Po dogovoru")}</dd><dt>Začetek</dt><dd>${esc(j.od || "takoj")}</dd><dt>Objavljeno</dt><dd>${esc(j.objavljeno)}</dd>`;
+    const others = allJobs().filter(x => x.id !== j.id);
+    $("#similar").innerHTML = others.filter(x => x.kat === j.kat).concat(others.filter(x => x.regija === j.regija && x.kat !== j.kat)).slice(0, 2).map(jobCard).join("");
 
-    const box = $("#applyBox");
-    const done = () => { box.innerHTML = `<div class="stack"><span class="tag tag-ok" style="justify-self:start;align-self:flex-start">Prijava oddana</span><h3>Kaj sledi?</h3><p class="small">Delodajalec te bo poklical v 2 delovnih dneh. Ko te izbere, naroči e-napotnico – brez nje dela ne smeš začeti.</p><a class="btn btn-primary btn-block" href="napotnica.html?job=${j.id}">Naroči e-napotnico</a><a class="btn btn-outline btn-block" href="prosta-dela.html">Nazaj na seznam del</a></div>`; };
-    if (state.prijave.includes(j.id)) { done(); return; }
-    if (state.prijavljen) { $("#apIme").value = SS.DEMO_USER.ime; $("#apEmail").value = SS.DEMO_USER.email; }
+    const box = $("#applyBox"), u = me();
+    const showApp = a => {
+      const next = a.status === "Sprejeta"
+        ? `<p class="small"><b>Delodajalec te je izbral.</b> Zdaj naroči e-napotnico – brez nje dela ne smeš začeti.</p><a class="btn btn-primary btn-block" href="napotnica.html?job=${j.id}">Naroči e-napotnico</a>`
+        : a.status === "Zavrnjena" ? `<p class="small">Delodajalec je izbral drugega kandidata. Poglej podobna dela spodaj.</p>`
+        : `<p class="small">Delodajalec je prejel tvojo prijavo. Ko te izbere, boš to videl tukaj in v Mojem računu.</p>`;
+      box.innerHTML = `<div class="stack"><span class="tag ${statusBadge(a.status)}" style="align-self:flex-start">Prijava: ${esc(a.status.toLowerCase())}</span><h3>Oddano ${esc(a.datum)}</h3>${next}<a class="btn btn-outline btn-block" href="moj-racun.html#prijave">Moje prijave</a></div>`;
+    };
+    if (j.aktiven === false) { box.innerHTML = `<p class="muted">Oglas je zaključen in ne sprejema novih prijav.</p>`; return; }
+    if (u && u.tip === "podjetje") {
+      const owner = j.ownerId === u.id || j.podjetje === u.naziv, n = state.applications.filter(a => a.jobId === j.id).length;
+      box.innerHTML = owner
+        ? `<div class="stack"><span class="tag" style="align-self:flex-start">Vaš oglas</span><h3>${n} ${n === 1 ? "prijava" : n === 2 ? "prijavi" : n < 5 ? "prijave" : "prijav"}</h3><a class="btn btn-primary btn-block" href="moj-racun.html#prijave">Poglej kandidate</a></div>`
+        : `<p class="muted">Prijavljeni ste kot podjetje. Na dela se lahko prijavijo samo študenti in dijaki.</p>`;
+      return;
+    }
+    if (!u) { needLogin(box, "Prijavi se na delo", "Za prijavo potrebuješ račun. Tako boš v Mojem računu videl, ali te je delodajalec izbral.", "student"); return; }
+    const existing = myApplication(j.id);
+    if (existing) { showApp(existing); return; }
+    $("#apIme").value = fullName(u); $("#apEmail").value = u.email; $("#apTel").value = u.tel || "";
     $("#applyForm").addEventListener("submit", e => {
       e.preventDefault();
       if (!validate(e.target)) return;
-      state.prijave.push(j.id); save(); done(); toast("Prijava je oddana.");
+      const a = { id: uid("a"), jobId: j.id, studentId: u.id, ime: $("#apIme").value.trim(), tel: $("#apTel").value.trim(), email: $("#apEmail").value.trim(), sporocilo: $("#apMsg").value.trim(), datum: today(), status: "Oddana" };
+      state.applications.unshift(a); save(); showApp(a); toast("Prijava je oddana.");
     });
   };
 
   PAGES.join = () => {
+    if (me()) { $("#joinWrap").innerHTML = `<div class="card form-card stack"><h2>Že si prijavljen</h2><p class="muted">Prijavljen si kot ${esc(fullName(me()))}. Za nov račun se najprej odjavi.</p><div class="form-actions"><a class="btn btn-primary" href="moj-racun.html">Moj račun</a></div></div>`; return; }
     const form = $("#joinForm"); const file = dropzone($(".dropzone", form));
     wizard(form, {
       onStep: i => { if (i === 2) $("#joinSummary").innerHTML = `<dt>Ime</dt><dd>${esc($("#jnIme").value)} ${esc($("#jnPriimek").value)}</dd><dt>E-pošta</dt><dd>${esc($("#jnEmail").value)}</dd><dt>Šola</dt><dd>${esc($("#jnSola").value)}</dd><dt>Potrdilo</dt><dd>${esc(file())}</dd><dt>TRR</dt><dd>${esc($("#jnTrr").value)}</dd>`; },
       onFinish: () => {
-        state.clan = true; state.prijavljen = true; state.status = { veljaven: true, do: "30. 9. 2027" }; save();
-        $("#joinWrap").innerHTML = successHTML("Dobrodošel med člani!", "Tvoja članska številka je <b>SS-104 552</b>. Status velja do 30. 9. 2027. Zdaj se lahko prijaviš na dela in naročaš napotnice.", `<a class="btn btn-primary" href="prosta-dela.html">Poišči delo</a><a class="btn btn-outline" href="moj-racun.html">Moj račun</a>`);
+        const email = $("#jnEmail").value.trim();
+        const u = { id: uid("u"), tip: "student", email, geslo: salted(email, $("#jnGeslo").value),
+          ime: $("#jnIme").value.trim(), priimek: $("#jnPriimek").value.trim(), tel: $("#jnTel").value.replace(/\s/g, ""),
+          naslov: $("#jnNaslov").value.trim(), sola: $("#jnSola").value.trim(), trr: $("#jnTrr").value.replace(/\s/g, ""),
+          clanska: "SS-" + (100000 + Math.floor(Math.random() * 899999)).toString().replace(/(\d{3})(\d{3})/, "$1 $2"),
+          status: { veljaven: true, do: "30. 9. 2027" }, zasluzki: [] };
+        state.users.push(u); login(u);
+        const next = nextUrl("");
+        $("#joinWrap").innerHTML = successHTML(`Dobrodošel med člani, ${esc(u.ime)}!`, `Tvoja članska številka je <b>${u.clanska}</b>. Status velja do 30. 9. 2027. Prijavljen si in se lahko prijaviš na dela.`,
+          next ? `<a class="btn btn-primary" href="${esc(next)}">Nadaljuj</a><a class="btn btn-outline" href="moj-racun.html">Moj račun</a>` : `<a class="btn btn-primary" href="prosta-dela.html">Poišči delo</a><a class="btn btn-outline" href="moj-racun.html">Moj račun</a>`);
+        refreshChrome();
       }
     });
   };
@@ -441,19 +533,23 @@
   PAGES.status = () => {
     const wrap = $("#statusWrap");
     const next = params.get("next");
-    if (state.status.veljaven) {
-      wrap.innerHTML = `<div class="card form-card stack"><span class="tag tag-ok" style="align-self:flex-start">Veljaven do ${state.status.do}</span><h2>Tvoj status je veljaven</h2><p class="muted">Ni ti treba storiti ničesar. Status boš podaljšal ob začetku naslednjega šolskega leta – opomnili te bomo po e-pošti.</p><div class="form-actions"><a class="btn btn-primary" href="prosta-dela.html">Poišči delo</a><a class="btn btn-outline" href="moj-racun.html">Moj račun</a></div></div>`;
+    const u = me();
+    if (!u) { needLogin(wrap, "Prijavi se za podaljšanje statusa", "Status je vezan na tvoj račun. Prijavi se, pa ga podaljšaš v treh korakih.", "student"); return; }
+    if (u.tip !== "student") { wrap.innerHTML = `<div class="card form-card"><p class="muted">Prijavljeni ste kot podjetje. Status podaljšujejo študenti in dijaki.</p></div>`; return; }
+    if (u.status.veljaven) {
+      wrap.innerHTML = `<div class="card form-card stack"><span class="tag tag-ok" style="align-self:flex-start">Veljaven do ${u.status.do}</span><h2>Tvoj status je veljaven</h2><p class="muted">Ni ti treba storiti ničesar. Status boš podaljšal ob začetku naslednjega šolskega leta – opomnili te bomo po e-pošti.</p><div class="form-actions">${next === "napotnica" ? `<a class="btn btn-primary" href="napotnica.html${params.get("job") ? "?job=" + encodeURIComponent(params.get("job")) : ""}">Nadaljuj z napotnico</a>` : `<a class="btn btn-primary" href="prosta-dela.html">Poišči delo</a>`}<a class="btn btn-outline" href="moj-racun.html">Moj račun</a></div></div>`;
       return;
     }
-    if (state.prijavljen) { $("#stIme").value = SS.DEMO_USER.ime; $("#stEmail").value = SS.DEMO_USER.email; $("#stClan").value = SS.DEMO_USER.clanska; }
+    $("#stIme").value = fullName(u); $("#stEmail").value = u.email; $("#stClan").value = u.clanska || "";
     const form = $("#statusForm"); const file = dropzone($(".dropzone", form));
     wizard(form, {
       onStep: i => { if (i === 2) $("#stSummary").innerHTML = `<dt>Ime</dt><dd>${esc($("#stIme").value)}</dd><dt>Članska št.</dt><dd>${esc($("#stClan").value)}</dd><dt>Šola</dt><dd>${esc($("#stSola").value)}</dd><dt>Šolsko leto</dt><dd>${esc($("#stLeto").value)}</dd><dt>Potrdilo</dt><dd>${esc(file())}</dd>`; },
       onFinish: () => {
         const leto = $("#stLeto").value;
-        state.status = { veljaven: true, do: leto === "2027/28" ? "30. 9. 2028" : "30. 9. 2027" }; save();
-        wrap.innerHTML = `<div class="card form-card">${successHTML("Status je podaljšan", `Status velja do <b>${state.status.do}</b>. Potrdilo smo poslali na ${esc($("#stEmail").value)}.`,
-          next === "napotnica" ? `<a class="btn btn-primary" href="napotnica.html${params.get("job") ? "?job=" + params.get("job") : ""}">Nadaljuj z napotnico</a>` : `<a class="btn btn-primary" href="prosta-dela.html">Poišči delo</a><a class="btn btn-outline" href="index.html">Na začetno stran</a>`)}</div>`;
+        u.status = { veljaven: true, do: leto === "2027/28" ? "30. 9. 2028" : "30. 9. 2027" };
+        u.sola = $("#stSola").value; save();
+        wrap.innerHTML = `<div class="card form-card">${successHTML("Status je podaljšan", `Status velja do <b>${u.status.do}</b>. Potrdilo smo poslali na ${esc($("#stEmail").value)}.`,
+          next === "napotnica" ? `<a class="btn btn-primary" href="napotnica.html${params.get("job") ? "?job=" + encodeURIComponent(params.get("job")) : ""}">Nadaljuj z napotnico</a>` : `<a class="btn btn-primary" href="prosta-dela.html">Poišči delo</a><a class="btn btn-outline" href="index.html">Na začetno stran</a>`)}</div>`;
         toast("Status je podaljšan.");
       }
     });
@@ -461,24 +557,28 @@
 
   PAGES.referral = () => {
     const wrap = $("#napWrap"), jobId = Number(params.get("job")) || "";
-    if (!state.status.veljaven) {
-      wrap.innerHTML = `<div class="card form-card stack"><span class="tag tag-warn" style="align-self:flex-start">${statusText()}</span><h2>Najprej podaljšaj status</h2><p>Napotnico lahko izdamo le z veljavnim statusom dijaka ali študenta. Podaljšanje traja približno 2 minuti, potem te vrnemo sem in podatki o delu ostanejo izbrani.</p><div class="form-actions"><a class="btn btn-primary" href="podaljsaj-status.html?next=napotnica${jobId ? "&job=" + jobId : ""}">Podaljšaj status</a><a class="btn btn-outline" href="vclani-se.html">Še nisem član</a></div></div>`;
+    const u = me();
+    if (!u) { needLogin(wrap, "Prijavi se za naročilo napotnice", "Napotnica je vezana na tvoj račun in veljaven status. Prijavi se ali se včlani.", "student"); return; }
+    if (u.tip !== "student") { wrap.innerHTML = `<div class="card form-card stack"><p class="muted">Prijavljeni ste kot podjetje. Napotnice naročajo študenti; naročene napotnice za vaše oglase vidite v <a href="moj-racun.html">Mojem računu</a>.</p></div>`; return; }
+    if (!u.status.veljaven) {
+      wrap.innerHTML = `<div class="card form-card stack"><span class="tag tag-warn" style="align-self:flex-start">${statusText(u)}</span><h2>Najprej podaljšaj status</h2><p>Napotnico lahko izdamo le z veljavnim statusom dijaka ali študenta. Podaljšanje traja približno 2 minuti, potem te vrnemo sem in podatki o delu ostanejo izbrani.</p><div class="form-actions"><a class="btn btn-primary" href="podaljsaj-status.html?next=napotnica${jobId ? "&job=" + jobId : ""}">Podaljšaj status</a></div></div>`;
       return;
     }
     const sel = $("#npDelo");
-    sel.innerHTML = `<option value="">Izberi delo …</option>` + SS.JOBS.map(j => `<option value="${j.id}">${esc(j.naziv)} – ${esc(j.podjetje)} (šifra ${j.id})</option>`).join("") + `<option value="drugo">Delo, ki ga ni na seznamu</option>`;
+    sel.innerHTML = `<option value="">Izberi delo …</option>` + allJobs().map(j => `<option value="${j.id}">${esc(j.naziv)} – ${esc(j.podjetje)} (šifra ${j.id})</option>`).join("") + `<option value="drugo">Delo, ki ga ni na seznamu</option>`;
     sel.value = String(jobId || "");
     const other = $("#npOther");
     const syncOther = () => { other.hidden = sel.value !== "drugo"; $$("input", other).forEach(i => { i.required = sel.value === "drugo"; i.disabled = sel.value !== "drugo"; }); };
     sel.addEventListener("change", syncOther); syncOther();
-    if (state.prijavljen) { $("#npIme").value = SS.DEMO_USER.ime; $("#npEmail").value = SS.DEMO_USER.email; }
+    $("#npIme").value = fullName(u); $("#npEmail").value = u.email;
     const form = $("#napForm");
-    const jobLabel = () => sel.value === "drugo" ? `${$("#npPodjetje").value} – ${$("#npNaziv").value}` : (SS.JOBS.find(j => j.id === Number(sel.value)) || {}).podjetje;
+    const jobLabel = () => sel.value === "drugo" ? `${$("#npPodjetje").value} – ${$("#npNaziv").value}` : (jobById(sel.value) || {}).podjetje;
     wizard(form, {
       onStep: i => { if (i === 2) $("#npSummary").innerHTML = `<dt>Ime</dt><dd>${esc($("#npIme").value)}</dd><dt>Delodajalec</dt><dd>${esc(jobLabel())}</dd><dt>Začetek</dt><dd>${esc($("#npZacetek").value || "po dogovoru")}</dd><dt>EMŠO</dt><dd>${esc($("#npEmso").value.slice(0, 4))}•••••••••</dd><dt>Prevzem</dt><dd>${esc($("input[name=prevzem]:checked").value)}</dd>`; },
       onFinish: () => {
         const st = "EN-2026-" + String(Math.floor(10000 + Math.random() * 89999));
-        state.napotnice.unshift({ st, podjetje: jobLabel(), datum: today(), status: "V obdelavi" }); save();
+        // EMŠO se ne shrani – v bazo gre le, kar je potrebno za prikaz napotnice (GDPR, minimizacija podatkov)
+        state.referrals.unshift({ st, studentId: u.id, ime: $("#npIme").value.trim(), jobId: sel.value === "drugo" ? null : Number(sel.value), podjetje: jobLabel(), datum: today(), zacetek: $("#npZacetek").value, status: "V obdelavi" }); save();
         wrap.innerHTML = `<div class="card form-card">${successHTML("Napotnica je naročena", `Številka napotnice: <b>${st}</b>. Delodajalec jo prejme elektronsko, ti pa obvestilo po e-pošti, ko bo potrjena (običajno isti delovni dan).`, `<a class="btn btn-primary" href="moj-racun.html">Poglej v Mojem računu</a><a class="btn btn-outline" href="prosta-dela.html">Poišči še eno delo</a>`)}</div>`;
         toast("Napotnica je naročena.");
       }
@@ -504,7 +604,7 @@
     $$(".seg button").forEach(b => b.addEventListener("click", () => { mode = b.dataset.mode; $$(".seg button").forEach(x => x.setAttribute("aria-pressed", String(x === b))); run(); }));
     $$("#calcForm input").forEach(i => i.addEventListener("input", run));
     $("#calcForm").addEventListener("submit", e => e.preventDefault());
-    const jid = Number(params.get("job")); const j = SS.JOBS.find(x => x.id === jid); if (j) $("#cUrna").value = j.urna;
+    const j = params.get("job") && jobById(params.get("job")); if (j) $("#cUrna").value = j.urna;
     run();
   };
 
@@ -524,37 +624,130 @@
   };
 
   PAGES.login = () => {
-    if (state.prijavljen) { location.replace("moj-racun.html"); return; }
-    $("#demoLogin").addEventListener("click", () => { $("#lgEmail").value = SS.DEMO_USER.email; $("#lgPass").value = "testno-geslo"; $("#lgEmail").focus(); });
+    if (me()) { location.replace(nextUrl("moj-racun.html")); return; }
+    const fill = acc => { $("#lgEmail").value = acc.email; $("#lgPass").value = acc.geslo; $("#lgErr").hidden = true; $("#lgEmail").focus(); };
+    $("#demoStudent").addEventListener("click", () => fill(SS.DEMO_ACCOUNTS[0]));
+    $("#demoCompany").addEventListener("click", () => fill(SS.DEMO_ACCOUNTS[1]));
+    const n = params.get("next"); if (n) $$("[data-keep-next]").forEach(a => a.href += "?next=" + encodeURIComponent(n));
     $("#loginForm").addEventListener("submit", e => {
       e.preventDefault(); if (!validate(e.target)) return;
-      state.prijavljen = true; save(); location.href = params.get("next") || "moj-racun.html";
+      const u = findUser($("#lgEmail").value);
+      if (!u || u.geslo !== salted(u.email, $("#lgPass").value)) { $("#lgErr").hidden = false; $("#lgPass").value = ""; $("#lgPass").focus(); return; }
+      login(u); location.href = nextUrl("moj-racun.html");
     });
   };
 
   PAGES.account = () => {
-    if (!state.prijavljen) { location.replace("prijava.html?next=moj-racun.html"); return; }
-    const u = SS.DEMO_USER;
-    $("#accName").textContent = u.ime;
-    $("#accMeta").textContent = `Članska številka ${u.clanska} · ${u.sola}`;
-    const letos = u.zasluzki.reduce((s, x) => s + x[1], 0);
-    $("#kpis").innerHTML = `
-      <div class="kpi"><span class="small muted">Status</span><b style="font-size:1.05rem;color:${state.status.veljaven ? "var(--ok)" : "var(--warn)"}">${state.status.veljaven ? "Veljaven" : "Potekel"}</b><span class="small muted">${state.status.veljaven ? "do " : ""}${state.status.do}</span></div>
-      <div class="kpi"><span class="small muted">Napotnice</span><b>${state.napotnice.length}</b><span class="small muted">naročene</span></div>
-      <div class="kpi"><span class="small muted">Prijave na dela</span><b>${state.prijave.length}</b><span class="small muted">oddane</span></div>
-      <div class="kpi"><span class="small muted">Neto zaslužek 2026</span><b>${eur(letos)}</b><span class="small muted">jun–nov</span></div>`;
-    if (!state.status.veljaven) $("#accAlert").innerHTML = `<div class="status-banner"><span><b>${statusText()}.</b> Brez veljavnega statusa ne moreš naročiti napotnice.</span><a class="btn btn-primary btn-sm" href="podaljsaj-status.html">Podaljšaj status</a></div>`;
-    const max = Math.max(...u.zasluzki.map(x => x[1]), 1);
-    $("#bars").innerHTML = u.zasluzki.map((x, k) => `<div class="bar ${k === u.zasluzki.length - 1 ? "cur" : ""}" title="${x[0]}: ${eur(x[1])}"><span class="v">${Math.round(x[1])}</span><i style="height:${Math.max(2, (x[1] / max) * 110)}px;--i:${k}"></i>${x[0]}</div>`).join("");
-    $("#napTable").innerHTML = state.napotnice.length
-      ? state.napotnice.map(n => `<tr><td>${esc(n.st)}</td><td>${esc(n.podjetje)}</td><td>${esc(n.datum)}</td><td><span class="tag tag-warn">${esc(n.status)}</span></td></tr>`).join("")
-      : `<tr><td colspan="4" class="muted">Še nimaš naročenih napotnic. <a href="napotnica.html">Naroči prvo napotnico</a>.</td></tr>`;
-    const apps = state.prijave.map(id => SS.JOBS.find(j => j.id === id)).filter(Boolean);
-    $("#appList").innerHTML = apps.length ? apps.map(jobCard).join("") : `<p class="muted">Še nisi oddal nobene prijave. <a href="prosta-dela.html">Poglej prosta dela</a>.</p>`;
-    $("#logout").addEventListener("click", () => { state.prijavljen = false; save(); location.href = "index.html"; });
+    const u = me();
+    if (!u) { location.replace("prijava.html?next=moj-racun.html"); return; }
+    $("#logout").onclick = () => { state.session = null; save(); location.href = "index.html"; };
+    const root = $("#accRoot");
+    const kpi = (label, val, sub, color) => `<div class="kpi"><span class="small muted">${label}</span><b${color ? ` style="font-size:1.05rem;color:${color}"` : ""}>${val}</b><span class="small muted">${sub}</span></div>`;
+    const nav = items => `<nav class="dash-nav" aria-label="Moj račun">${items.map(x => `<a href="#${x[0]}">${x[1]}</a>`).join("")}</nav>`;
+
+    if (u.tip === "student") {
+      $("#accName").textContent = fullName(u);
+      $("#accMeta").textContent = `Članska številka ${u.clanska} · ${u.sola || "šola ni vpisana"}`;
+      const apps = state.applications.filter(a => a.studentId === u.id);
+      const refs = state.referrals.filter(r => r.studentId === u.id);
+      const z = u.zasluzki || [], letos = z.reduce((s, x) => s + x[1], 0), max = Math.max(...z.map(x => x[1]), 1);
+      root.innerHTML = `<div class="dash">${nav([["pregled", "Pregled"], ["prijave", "Prijave na dela"], ["napotnice", "Napotnice"], ["zasluzek", "Zaslužek"]])}
+        <div class="stack">
+          ${u.status.veljaven ? "" : `<div class="status-banner"><span><b>${statusText(u)}.</b> Brez veljavnega statusa ne moreš naročiti napotnice.</span><a class="btn btn-primary btn-sm" href="podaljsaj-status.html">Podaljšaj status</a></div>`}
+          ${apps.some(a => a.status === "Sprejeta") && !refs.length ? `<div class="status-banner ok"><span><b>Delodajalec te je izbral!</b> Naroči napotnico, preden začneš z delom.</span><a class="btn btn-primary btn-sm" href="napotnica.html?job=${apps.find(a => a.status === "Sprejeta").jobId}">Naroči napotnico</a></div>` : ""}
+          <div id="pregled"><div class="kpis">
+            ${kpi("Status", u.status.veljaven ? "Veljaven" : "Potekel", (u.status.veljaven ? "do " : "") + u.status.do, u.status.veljaven ? "var(--ok)" : "var(--warn)")}
+            ${kpi("Prijave na dela", apps.length, `${apps.filter(a => a.status === "Sprejeta").length} sprejetih`)}
+            ${kpi("Napotnice", refs.length, "naročene")}
+            ${kpi("Neto zaslužek 2026", eur(letos), z.length ? "jun–nov" : "še ni izplačil")}
+          </div></div>
+          <div class="card stack" id="prijave">
+            <div class="row between"><h2 style="font-size:1.3rem">Moje prijave na dela</h2><a class="btn btn-outline btn-sm" href="prosta-dela.html">Poišči delo</a></div>
+            ${apps.length ? `<div class="table-wrap"><table class="tbl"><thead><tr><th>Delo</th><th>Podjetje</th><th>Oddano</th><th>Stanje</th><th></th></tr></thead><tbody>
+              ${apps.map(a => { const j = jobById(a.jobId) || {}; return `<tr><td><a href="delo.html?id=${a.jobId}">${esc(j.naziv || "Delo " + a.jobId)}</a></td><td>${esc(j.podjetje || "")}</td><td>${esc(a.datum)}</td><td><span class="tag ${statusBadge(a.status)}">${esc(a.status)}</span></td>
+                <td>${a.status === "Sprejeta" ? `<a class="btn btn-primary btn-sm" href="napotnica.html?job=${a.jobId}">Napotnica</a>` : a.status === "Oddana" ? `<button class="link-btn small" data-withdraw="${a.id}">Umakni</button>` : ""}</td></tr>`; }).join("")}
+              </tbody></table></div>` : `<p class="muted">Še nisi oddal nobene prijave. <a href="prosta-dela.html">Poglej prosta dela</a>.</p>`}
+          </div>
+          <div class="card stack" id="napotnice">
+            <div class="row between"><h2 style="font-size:1.3rem">Moje napotnice</h2><a class="btn btn-primary btn-sm" href="napotnica.html">Nova napotnica</a></div>
+            <div class="table-wrap"><table class="tbl"><thead><tr><th>Številka</th><th>Delodajalec</th><th>Datum</th><th>Stanje</th></tr></thead><tbody>
+              ${refs.length ? refs.map(n => `<tr><td>${esc(n.st)}</td><td>${esc(n.podjetje)}</td><td>${esc(n.datum)}</td><td><span class="tag ${n.status === "Potrjena" ? "tag-ok" : "tag-warn"}">${esc(n.status)}</span></td></tr>`).join("")
+                : `<tr><td colspan="4" class="muted">Še nimaš naročenih napotnic.</td></tr>`}
+            </tbody></table></div>
+          </div>
+          <div class="card stack" id="zasluzek">
+            <div class="row between"><h2 style="font-size:1.3rem">Neto zaslužek po mesecih</h2><span class="small muted">v evrih</span></div>
+            ${z.length ? `<div class="bars">${z.map((x, k) => `<div class="bar ${k === z.length - 1 ? "cur" : ""}" title="${x[0]}: ${eur(x[1])}"><span class="v">${Math.round(x[1])}</span><i style="height:${Math.max(2, (x[1] / max) * 110)}px;--i:${k}"></i>${x[0]}</div>`).join("")}</div>`
+              : `<p class="muted">Ko boš opravil prvo delo, boš tukaj videl zaslužek po mesecih.</p>`}
+          </div>
+        </div></div>`;
+      root.onclick = e => {
+        const b = e.target.closest("[data-withdraw]"); if (!b) return;
+        state.applications = state.applications.filter(a => a.id !== b.dataset.withdraw); save();
+        toast("Prijava je umaknjena."); PAGES.account();
+      };
+      return;
+    }
+
+    // Podjetje
+    $("#accName").textContent = u.naziv;
+    $("#accMeta").textContent = `Poslovni partner · ${u.oseba || ""} · ${u.email}`;
+    const jobs = companyJobs(u), ids = jobs.map(j => j.id);
+    const apps = state.applications.filter(a => ids.includes(a.jobId));
+    const refs = state.referrals.filter(r => ids.includes(r.jobId));
+    const nove = apps.filter(a => a.status === "Oddana").length;
+    root.innerHTML = `<div class="dash">${nav([["pregled", "Pregled"], ["prijave", "Prijave kandidatov"], ["oglasi", "Moji oglasi"], ["napotnice", "Napotnice"]])}
+      <div class="stack">
+        <div id="pregled"><div class="kpis">
+          ${kpi("Aktivni oglasi", jobs.filter(j => j.aktiven !== false).length, "objavljeni")}
+          ${kpi("Nove prijave", nove, "čakajo na odgovor")}
+          ${kpi("Sprejeti kandidati", apps.filter(a => a.status === "Sprejeta").length, "skupaj")}
+          ${kpi("Napotnice", refs.length, "za vaše oglase")}
+        </div></div>
+        <div class="card stack" id="prijave">
+          <h2 style="font-size:1.3rem">Prijave kandidatov</h2>
+          ${apps.length ? apps.map(a => { const j = jobById(a.jobId) || {}; return `<div class="file-row" style="align-items:flex-start;flex-wrap:wrap">
+              <span class="stack-sm" style="gap:2px;flex:1 1 260px"><b>${esc(a.ime)}</b><span class="small muted">za »${esc(j.naziv || "")}« · ${esc(a.datum)}</span>
+                ${a.sporocilo ? `<span class="small">»${esc(a.sporocilo)}«</span>` : ""}
+                ${a.status === "Sprejeta" ? `<span class="small">Kontakt: <b>${esc(a.tel)}</b> · <b>${esc(a.email)}</b></span>` : ""}</span>
+              ${a.status === "Oddana" ? `<span class="row" style="gap:8px"><button class="btn btn-primary btn-sm" data-decide="Sprejeta" data-id="${a.id}">Sprejmi</button><button class="btn btn-outline btn-sm" data-decide="Zavrnjena" data-id="${a.id}">Zavrni</button></span>`
+                : `<span class="tag ${statusBadge(a.status)}">${esc(a.status)}</span>`}
+            </div>`; }).join("") : `<p class="muted">Na vaše oglase še ni prijav.</p>`}
+        </div>
+        <div class="card stack" id="oglasi">
+          <div class="row between"><h2 style="font-size:1.3rem">Moji oglasi</h2><a class="btn btn-red btn-sm" href="oddaja-oglasa.html">Nov oglas</a></div>
+          ${jobs.length ? `<div class="table-wrap"><table class="tbl"><thead><tr><th>Oglas</th><th>Objavljeno</th><th class="num">Prijave</th><th>Stanje</th><th></th></tr></thead><tbody>
+            ${jobs.map(j => `<tr><td><a href="delo.html?id=${j.id}">${esc(j.naziv)}</a><br><span class="small muted">Šifra ${j.id} · ${eur(j.urna)}/h</span></td><td>${esc(j.objavljeno)}</td><td class="num">${apps.filter(a => a.jobId === j.id).length}</td>
+              <td><span class="tag ${j.aktiven === false ? "tag-red" : "tag-ok"}">${j.aktiven === false ? "Zaključen" : "Aktiven"}</span></td>
+              <td>${j.ownerId === u.id ? `<button class="link-btn small" data-toggle-job="${j.id}">${j.aktiven === false ? "Ponovno objavi" : "Zaključi"}</button>` : ""}</td></tr>`).join("")}
+          </tbody></table></div>` : `<p class="muted">Še nimate oglasov. <a href="oddaja-oglasa.html">Oddajte prvi oglas</a>.</p>`}
+        </div>
+        <div class="card stack" id="napotnice">
+          <h2 style="font-size:1.3rem">Napotnice za vaše oglase</h2>
+          <div class="table-wrap"><table class="tbl"><thead><tr><th>Številka</th><th>Študent</th><th>Delo</th><th>Stanje</th></tr></thead><tbody>
+            ${refs.length ? refs.map(n => `<tr><td>${esc(n.st)}</td><td>${esc(n.ime || "")}</td><td>${esc((jobById(n.jobId) || {}).naziv || "")}</td><td>${n.status === "V obdelavi" ? `<button class="btn btn-primary btn-sm" data-confirm-ref="${esc(n.st)}">Potrdi</button>` : `<span class="tag tag-ok">${esc(n.status)}</span>`}</td></tr>`).join("")
+              : `<tr><td colspan="4" class="muted">Ko izbrani študent naroči napotnico, jo boste videli tukaj.</td></tr>`}
+          </tbody></table></div>
+        </div>
+      </div></div>`;
+    root.onclick = e => {
+      const d = e.target.closest("[data-decide]"), t = e.target.closest("[data-toggle-job]"), r = e.target.closest("[data-confirm-ref]");
+      if (d) { const a = state.applications.find(x => x.id === d.dataset.id); a.status = d.dataset.decide; save(); toast(a.status === "Sprejeta" ? `${a.ime} je sprejet(a). Študent to vidi v svojem računu.` : "Prijava je zavrnjena."); }
+      else if (t) { const j = state.jobs.find(x => String(x.id) === t.dataset.toggleJob); j.aktiven = j.aktiven === false; save(); toast(j.aktiven ? "Oglas je ponovno objavljen." : "Oglas je zaključen in ni več med prostimi deli."); }
+      else if (r) { const n = state.referrals.find(x => x.st === r.dataset.confirmRef); n.status = "Potrjena"; save(); toast("Napotnica je potrjena."); }
+      else return;
+      PAGES.account();
+    };
   };
 
   PAGES.jobPost = () => {
+    const u = me();
+    if (!u || u.tip !== "podjetje") {
+      needLogin($("#postWrap"), u ? "Oglase oddajajo podjetja" : "Prijavite se kot podjetje",
+        u ? "Prijavljeni ste kot študent. Za oddajo oglasa se odjavite in prijavite z računom podjetja." : "Za oddajo oglasa potrebujete račun poslovnega partnerja. Vpis traja 2 minuti.", "podjetje");
+      return;
+    }
+    $("#ogPodjetje").value = u.naziv; $("#ogDavcna").value = u.davcna || ""; $("#ogOseba").value = u.oseba || ""; $("#ogEmail").value = u.email;
     const katSel = $("#ogKat"); katSel.innerHTML = `<option value="">Izberi …</option>` + SS.KATEGORIJE.map(k => `<option>${k}</option>`).join("");
     const regSel = $("#ogRegija"); regSel.innerHTML = SS.REGIJE.map(k => `<option>${k}</option>`).join("");
     const prev = () => {
@@ -565,15 +758,28 @@
     prev();
     $("#postForm").addEventListener("submit", e => {
       e.preventDefault(); if (!validate(e.target)) return;
-      $("#postWrap").innerHTML = `<div class="card form-card">${successHTML("Oglas je oddan", `Oglas »${esc($("#ogNaziv").value)}« bo po pregledu objavljen v 1 delovnem dnevu. Potrditev smo poslali na ${esc($("#ogEmail").value)}.`, `<a class="btn btn-primary" href="podjetja.html">Nazaj na stran za podjetja</a><a class="btn btn-outline" href="oddaja-oglasa.html">Oddaj nov oglas</a>`)}</div>`;
+      const imgByKat = { "Strežba": "strezba.jpg", "Skladiščna dela": "skladisce.jpg", "Proizvodna dela": "skladisce.jpg", "Računalniška dela, informatika": "it.jpg" };
+      const ids = state.jobs.concat(SS.JOBS).map(j => Number(j.id));
+      const j = { id: Math.max(...ids) + 1, ownerId: u.id, aktiven: true, naziv: $("#ogNaziv").value.trim(), podjetje: u.naziv, kat: katSel.value,
+        regija: regSel.value, kraj: $("#ogKraj").value.trim(), urna: parseFloat($("#ogUrna").value) || 0, cas: $("#ogCas").value.trim(),
+        trajanje: "Po dogovoru", dijaki: $("#ogDijaki").checked, od: "takoj", objavljeno: today(), img: imgByKat[katSel.value] || "podjetja.jpg",
+        opis: $("#ogOpis").value.trim(), naloge: [], pogoji: [$("#ogDijaki").checked ? "status dijaka ali študenta" : "status študenta"] };
+      state.jobs.unshift(j); save();
+      $("#postWrap").innerHTML = `<div class="card form-card">${successHTML("Oglas je objavljen", `Oglas »${esc(j.naziv)}« (šifra ${j.id}) je zdaj med prostimi deli. Prijave kandidatov boste videli v Mojem računu.`, `<a class="btn btn-primary" href="delo.html?id=${j.id}">Poglej oglas</a><a class="btn btn-outline" href="moj-racun.html#oglasi">Moji oglasi</a>`)}</div>`;
       window.scrollTo({ top: 0 });
     });
   };
 
   PAGES.partner = () => {
+    if (me()) { $("#partnerWrap").innerHTML = `<div class="card form-card stack"><h2>Že ste prijavljeni</h2><p class="muted">Prijavljeni ste kot ${esc(fullName(me()))}. Za nov račun podjetja se najprej odjavite.</p><div class="form-actions"><a class="btn btn-primary" href="moj-racun.html">Moj račun</a></div></div>`; return; }
     $("#partnerForm").addEventListener("submit", e => {
       e.preventDefault(); if (!validate(e.target)) return;
-      $("#partnerWrap").innerHTML = `<div class="card form-card">${successHTML("Vloga je oddana", `Pogodbo o sodelovanju in dostop do e-poslovalnice boste prejeli na ${esc($("#ptEmail").value)} v 2 delovnih dneh.`, `<a class="btn btn-primary" href="oddaja-oglasa.html">Oddaj prvi oglas</a>`)}</div>`;
+      const email = $("#ptEmail").value.trim();
+      const u = { id: uid("u"), tip: "podjetje", email, geslo: salted(email, $("#ptGeslo").value), naziv: $("#ptNaziv").value.trim(),
+        davcna: $("#ptDavcna").value.replace(/\s/g, ""), maticna: $("#ptMaticna").value.trim(), naslov: $("#ptNaslov").value.trim(),
+        dejavnost: $("#ptDejavnost").value.trim(), oseba: $("#ptOseba").value.trim(), tel: $("#ptTel").value.replace(/\s/g, "") };
+      state.users.push(u); login(u); refreshChrome();
+      $("#partnerWrap").innerHTML = `<div class="card form-card">${successHTML("Račun podjetja je ustvarjen", `Dobrodošli, ${esc(u.naziv)}! Prijavljeni ste in lahko takoj objavite oglas. Pogodbo o sodelovanju boste prejeli na ${esc(email)}.`, `<a class="btn btn-red" href="${esc(nextUrl("oddaja-oglasa.html"))}">Oddaj prvi oglas</a><a class="btn btn-outline" href="moj-racun.html">Moj račun</a>`)}</div>`;
       window.scrollTo({ top: 0 });
     });
   };

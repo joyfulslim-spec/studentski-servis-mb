@@ -72,8 +72,19 @@ SS.OFFICES = [
   { mesto: "Žalec", naslov: "Savinjska cesta 1, 3310 Žalec", tel: "03 000 00 05", urnik: [["Pon, sre", "9.00–14.00"], ["Ostali dnevi", "zaprto"]] },
 ];
 
-/* Testni študent za »Moj račun« */
-SS.DEMO_USER = {
-  ime: "Luka Novak", email: "luka.novak@student.um.si", clanska: "SS-104 552", sola: "Univerza v Mariboru – FERI",
-  zasluzki: [ ["Jun", 412.40], ["Jul", 655.10], ["Avg", 702.85], ["Sep", 318.20], ["Okt", 486.00], ["Nov", 0] ],
-};
+/* Testna računa (izmišljena). Ob prvem obisku se zapišeta v »bazo« v brskalniku.
+   Gesla so v README.md; v bazi je shranjen samo njihov zgoščeni zapis. */
+SS.DEMO_ACCOUNTS = [
+  { id: "u-luka", tip: "student", email: "luka.novak@student.um.si", geslo: "Student123",
+    ime: "Luka", priimek: "Novak", tel: "041123456", sola: "Univerza v Mariboru – FERI", clanska: "SS-104 552",
+    status: { veljaven: false, do: "30. 9. 2026" },
+    zasluzki: [["Jun", 412.40], ["Jul", 655.10], ["Avg", 702.85], ["Sep", 318.20], ["Okt", 486.00], ["Nov", 0]] },
+  { id: "u-kavarna", tip: "podjetje", email: "kavarna@lent-primer.si", geslo: "Podjetje123",
+    naziv: "Kavarna Lent", oseba: "Mojca Kovač", tel: "022000000", davcna: "SI12345678", naslov: "Lent 1, 2000 Maribor" },
+];
+
+/* Vzorčne prijave na oglase testnega podjetja, da njegov račun ni prazen */
+SS.DEMO_APPLICATIONS = [
+  { id: "a-1", jobId: 2611, studentId: null, ime: "Maja Kranjc", tel: "040111222", email: "maja.kranjc@primer.si", sporocilo: "Lahko delam vsak vikend.", datum: "30. 10. 2026", status: "Oddana" },
+  { id: "a-2", jobId: 2611, studentId: null, ime: "Žan Horvat", tel: "031333444", email: "zan.horvat@primer.si", sporocilo: "Imam izkušnje s strežbo.", datum: "31. 10. 2026", status: "Oddana" },
+];
