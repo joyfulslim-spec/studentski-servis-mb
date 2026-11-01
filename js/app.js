@@ -5,6 +5,8 @@
 (function () {
   "use strict";
   const SS = window.SS;
+  document.documentElement.classList.add("js");
+  const reduceMotion = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   /* ---------- Pomožne funkcije ---------- */
   const $ = (s, el = document) => el.querySelector(s);
@@ -166,6 +168,84 @@
 
     $$("[data-cookie]").forEach(b => b.addEventListener("click", () => { state.piskotki = b.dataset.cookie; save(); $(".cookie").remove(); }));
     $("[data-reset]").addEventListener("click", SS.reset);
+
+    // Senca glave, trak napredka drsenja in gumb »na vrh«
+    const header = $(".site-header");
+    header.insertAdjacentHTML("beforeend", '<div class="scroll-progress" aria-hidden="true"></div>');
+    document.body.insertAdjacentHTML("beforeend", `<button class="to-top" type="button" aria-label="Na vrh strani"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg></button>`);
+    const topBtn = $(".to-top"), bar = $(".scroll-progress");
+    topBtn.addEventListener("click", () => window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" }));
+    let ticking = false;
+    const onScroll = () => {
+      const y = window.scrollY, max = document.documentElement.scrollHeight - innerHeight;
+      header.classList.toggle("scrolled", y > 8);
+      topBtn.classList.toggle("show", y > 600);
+      bar.style.setProperty("--p", max > 0 ? Math.min(1, y / max) : 0);
+      ticking = false;
+    };
+    window.addEventListener("scroll", () => { if (!ticking) { ticking = true; requestAnimationFrame(onScroll); } }, { passive: true });
+    onScroll();
+
+    // Valovanje ob kliku na gumb
+    document.addEventListener("pointerdown", e => {
+      const b = e.target.closest(".btn, .chip, .quick");
+      if (!b || reduceMotion) return;
+      const r = b.getBoundingClientRect(), s = Math.max(r.width, r.height);
+      const rip = document.createElement("span");
+      rip.className = "ripple";
+      rip.style.cssText = `width:${s}px;height:${s}px;left:${e.clientX - r.left - s / 2}px;top:${e.clientY - r.top - s / 2}px`;
+      if (getComputedStyle(b).position === "static") b.style.position = "relative";
+      b.style.overflow = "hidden";
+      b.appendChild(rip);
+      setTimeout(() => rip.remove(), 600);
+    });
+  }
+
+  /* ---------- Animacije: pojav ob drsenju, štetje številk ---------- */
+  function countUp(el) {
+    const txt = el.textContent.trim();
+    if (!/^\d{1,4}$/.test(txt) || reduceMotion) return;
+    const to = Number(txt), from = to > 1000 ? to - 65 : 0, t0 = performance.now(), dur = 1100;
+    const step = now => {
+      const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+      el.textContent = Math.round(from + (to - from) * e);
+      if (k < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+
+  function setupReveal() {
+    const targets = $$("main .section h2, main .quick, main .job-card, main .news-card, main .stat, main .split > *, main .office, main .kpi, main .file-row, main .accordion details, main .card:not(.form-card):not(.filters-panel), main .status-banner");
+    if (!("IntersectionObserver" in window) || reduceMotion) { $$(".stat b, .kpi b, #jobCount").forEach(countUp); return; }
+    const io = new IntersectionObserver(entries => entries.forEach(en => {
+      if (!en.isIntersecting) return;
+      en.target.classList.add("in");
+      $$(".stat b, .kpi b, #jobCount", en.target).forEach(countUp);
+      io.unobserve(en.target);
+    }), { rootMargin: "0px 0px -8% 0px", threshold: .08 });
+    targets.forEach(el => {
+      if (el.closest(".step, .home-hero, .page-hero, #jobList")) return;
+      const sibs = [...el.parentElement.children].filter(c => targets.includes(c));
+      el.style.setProperty("--d", Math.min(sibs.indexOf(el), 6) * 0.07 + "s");
+      el.classList.add("reveal");
+      io.observe(el);
+    });
+    const jc = $("#jobCount"); if (jc) countUp(jc);
+  }
+
+  /* Gladko štetje zneska v evrih (kalkulator) */
+  function tweenEur(el, to) {
+    const from = Number(el.dataset.v || 0); el.dataset.v = to;
+    if (reduceMotion) { el.textContent = eur(to); return; }
+    const t0 = performance.now(), dur = 450;
+    cancelAnimationFrame(el._raf);
+    const step = now => {
+      const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+      el.textContent = eur(from + (to - from) * e);
+      if (k < 1) el._raf = requestAnimationFrame(step);
+    };
+    el._raf = requestAnimationFrame(step);
+    el.classList.add("bump"); setTimeout(() => el.classList.remove("bump"), 200);
   }
 
   /* ---------- Skupni gradniki ---------- */
@@ -253,6 +333,23 @@
     $("#jobCount").textContent = SS.JOBS.length;
     const sel = $("#hRegija"); sel.innerHTML += SS.REGIJE.map(r => `<option>${r}</option>`).join("");
     const kat = $("#hKat"); kat.innerHTML += SS.KATEGORIJE.map(r => `<option>${r}</option>`).join("");
+
+    // Iskalno polje »tipka« primere, dokler ga uporabnik ne izbere
+    const q = $("#hQ"), examples = ["strežba", "programer", "inventura", "inštrukcije", "dostava s kolesom"];
+    if (!reduceMotion) {
+      let w = 0, c = 0, del = false, timer;
+      const tick = () => {
+        if (document.activeElement === q || q.value) { q.placeholder = "npr. strežba, programer, inventura"; timer = setTimeout(tick, 1200); return; }
+        const word = examples[w];
+        c += del ? -1 : 1;
+        q.placeholder = "npr. " + word.slice(0, c) + (c % 2 ? "|" : "");
+        let wait = del ? 45 : 90;
+        if (!del && c === word.length) { del = true; wait = 1400; }
+        else if (del && c === 0) { del = false; w = (w + 1) % examples.length; wait = 300; }
+        timer = setTimeout(tick, wait);
+      };
+      timer = setTimeout(tick, 1200);
+    }
     if (state.prijavljen) {
       const sb = $("#statusBanner"); sb.hidden = false;
       sb.classList.toggle("ok", state.status.veljaven);
@@ -281,7 +378,9 @@
         (!f.min || j.urna >= Number(f.min)) && (!f.dijaki || j.dijaki));
       if (f.sort === "urna") list = list.slice().sort((a, b) => b.urna - a.urna);
       $("#count").textContent = list.length;
-      $("#jobList").innerHTML = list.length ? list.map(jobCard).join("")
+      const jl = $("#jobList");
+      jl.classList.remove("anim-in"); void jl.offsetWidth; jl.classList.add("anim-in");
+      jl.innerHTML = list.length ? list.map((j, k) => jobCard(j).replace('class="job-card"', `class="job-card" style="--i:${Math.min(k, 8)}"`)).join("")
         : `<div class="card empty stack" style="align-items:center"><h3>Ni del, ki ustrezajo izbiri.</h3><p class="muted">Odstrani kakšen filter ali poišči z drugo besedo.</p><button class="btn btn-outline" id="clearAll" type="button">Počisti vse filtre</button></div>`;
       $$(".chip", chips).forEach(c => c.setAttribute("aria-pressed", String(c.dataset.kat === f.kat)));
       const p = new URLSearchParams(); Object.entries(f).forEach(([k, v]) => { if (v && !(k === "sort" && v === "novo")) p.set(k, v === true ? "1" : v); });
@@ -394,10 +493,12 @@
       let bruto = urna * ure;
       if (mode === "neto") bruto = (urna * ure) / (1 - p);
       const pr = bruto * p, neto = bruto - pr;
-      $("#cOut").innerHTML = `
-        <div class="result-row"><span>Bruto zaslužek</span><b>${eur(bruto)}</b></div>
-        <div class="result-row"><span>Prispevki (${(p * 100).toLocaleString("sl-SI")} %)</span><b>−${eur(pr)}</b></div>
-        <div class="stack-sm" style="gap:2px"><span>Neto izplačilo</span><span class="result-total">${eur(neto)}</span></div>`;
+      if (!$("#cNeto")) $("#cOut").innerHTML = `
+        <div class="result-row"><span>Bruto zaslužek</span><b id="cBruto"></b></div>
+        <div class="result-row"><span>Prispevki (${(p * 100).toLocaleString("sl-SI")} %)</span><b id="cPr"></b></div>
+        <div class="stack-sm" style="gap:2px"><span>Neto izplačilo</span><span class="result-total" id="cNeto"></span></div>`;
+      $("#cBruto").textContent = eur(bruto); $("#cPr").textContent = "−" + eur(pr);
+      tweenEur($("#cNeto"), neto);
       $("#cUrnaLbl").textContent = mode === "neto" ? "Neto urna postavka (€)" : "Bruto urna postavka (€)";
     };
     $$(".seg button").forEach(b => b.addEventListener("click", () => { mode = b.dataset.mode; $$(".seg button").forEach(x => x.setAttribute("aria-pressed", String(x === b))); run(); }));
@@ -412,7 +513,10 @@
     const run = () => {
       const urna = parseFloat($("#kUrna").value) || 0, ure = parseFloat($("#kUre").value) || 0, st = parseInt($("#kSt").value) || 1;
       const bruto = urna * ure * st, daj = bruto * d;
-      $("#kOut").innerHTML = `<div class="result-row"><span>Bruto za študente</span><b>${eur(bruto)}</b></div><div class="result-row"><span>Dajatve in prispevki (${(d * 100).toLocaleString("sl-SI")} %)</span><b>${eur(daj)}</b></div><div class="stack-sm" style="gap:2px"><span>Skupni strošek podjetja</span><span class="result-total">${eur(bruto + daj)}</span></div><p class="small" style="color:#c8d6e8">Študent prejme neto ${eur(bruto * (1 - SS.STOPNJE.prispevkiStudent))}.</p>`;
+      if (!$("#kTot")) $("#kOut").innerHTML = `<div class="result-row"><span>Bruto za študente</span><b id="kBruto"></b></div><div class="result-row"><span>Dajatve in prispevki (${(d * 100).toLocaleString("sl-SI")} %)</span><b id="kDaj"></b></div><div class="stack-sm" style="gap:2px"><span>Skupni strošek podjetja</span><span class="result-total" id="kTot"></span></div><p class="small" style="color:#c8d6e8">Študent prejme neto <span id="kNeto"></span>.</p>`;
+      $("#kBruto").textContent = eur(bruto); $("#kDaj").textContent = eur(daj);
+      $("#kNeto").textContent = eur(bruto * (1 - SS.STOPNJE.prispevkiStudent));
+      tweenEur($("#kTot"), bruto + daj);
     };
     $$("#costForm input").forEach(i => i.addEventListener("input", run));
     $("#costForm").addEventListener("submit", e => e.preventDefault());
@@ -441,7 +545,7 @@
       <div class="kpi"><span class="small muted">Neto zaslužek 2026</span><b>${eur(letos)}</b><span class="small muted">jun–nov</span></div>`;
     if (!state.status.veljaven) $("#accAlert").innerHTML = `<div class="status-banner"><span><b>${statusText()}.</b> Brez veljavnega statusa ne moreš naročiti napotnice.</span><a class="btn btn-primary btn-sm" href="podaljsaj-status.html">Podaljšaj status</a></div>`;
     const max = Math.max(...u.zasluzki.map(x => x[1]), 1);
-    $("#bars").innerHTML = u.zasluzki.map((x, k) => `<div class="bar ${k === u.zasluzki.length - 1 ? "cur" : ""}"><span class="v">${Math.round(x[1])}</span><i style="height:${Math.max(2, (x[1] / max) * 110)}px"></i>${x[0]}</div>`).join("");
+    $("#bars").innerHTML = u.zasluzki.map((x, k) => `<div class="bar ${k === u.zasluzki.length - 1 ? "cur" : ""}" title="${x[0]}: ${eur(x[1])}"><span class="v">${Math.round(x[1])}</span><i style="height:${Math.max(2, (x[1] / max) * 110)}px;--i:${k}"></i>${x[0]}</div>`).join("");
     $("#napTable").innerHTML = state.napotnice.length
       ? state.napotnice.map(n => `<tr><td>${esc(n.st)}</td><td>${esc(n.podjetje)}</td><td>${esc(n.datum)}</td><td><span class="tag tag-warn">${esc(n.status)}</span></td></tr>`).join("")
       : `<tr><td colspan="4" class="muted">Še nimaš naročenih napotnic. <a href="napotnica.html">Naroči prvo napotnico</a>.</td></tr>`;
@@ -513,4 +617,5 @@
   mountChrome();
   const page = document.body.dataset.page;
   if (PAGES[page]) PAGES[page]();
+  setupReveal();
 })();
