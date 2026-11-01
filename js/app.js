@@ -79,6 +79,15 @@
   }
   const statusBadge = s => s === "Sprejeta" ? "tag-ok" : s === "Zavrnjena" ? "tag-red" : "tag-warn";
 
+  /* Število stvari, ki čakajo uporabnika (testiranje s personami, ugotovitev U4):
+     podjetje – nove prijave; študent – sprejete prijave, za katere še ni napotnice */
+  function notifCount(u = me()) {
+    if (!u) return 0;
+    if (u.tip === "podjetje") { const ids = companyJobs(u).map(j => j.id); return state.applications.filter(a => ids.includes(a.jobId) && a.status === "Oddana").length; }
+    return state.applications.filter(a => a.studentId === u.id && a.status === "Sprejeta" && !state.referrals.some(r => r.studentId === u.id && r.jobId === a.jobId)).length;
+  }
+  const badgeHTML = n => n ? `<span class="badge" aria-label="${n} novih obvestil">${n}</span>` : "";
+
   /* ---------- Ikone ---------- */
   const I = {
     search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
@@ -120,7 +129,7 @@
   function headerHTML() {
     const u = me();
     const acc = u
-      ? `<a class="btn btn-outline account-btn" href="moj-racun.html" aria-label="Moj račun">${I.user}<span class="label">${esc(u.tip === "podjetje" ? u.naziv : u.ime)}</span></a>`
+      ? `<a class="btn btn-outline account-btn" href="moj-racun.html${notifCount(u) ? "#prijave" : ""}" aria-label="Moj račun">${I.user}<span class="label">${esc(u.tip === "podjetje" ? u.naziv : u.ime)}</span>${badgeHTML(notifCount(u))}</a>`
       : `<a class="btn btn-outline account-btn" href="prijava.html" aria-label="Prijava">${I.user}<span class="label">Prijava</span></a>`;
     return `
 <a class="skip" href="#main">Skoči na vsebino</a>
@@ -180,7 +189,7 @@
     const items = [["index.html", "Domov", I.home], ["prosta-dela.html", "Dela", I.search],
       isCompany() ? ["oddaja-oglasa.html", "Nov oglas", I.doc] : ["napotnica.html", "Napotnica", I.doc],
       [me() ? "moj-racun.html" : "prijava.html", "Moj račun", I.user]];
-    return `<nav class="bottom-bar" aria-label="Hitri meni">${items.map(x => `<a href="${x[0]}" class="${x[0] === here ? "active" : ""}">${x[2]}${x[1]}</a>`).join("")}</nav>`;
+    return `<nav class="bottom-bar" aria-label="Hitri meni">${items.map((x, k) => `<a href="${x[0]}" class="${x[0] === here ? "active" : ""}">${k === 3 ? `<span class="ico-wrap">${x[2]}${badgeHTML(notifCount())}</span>` : x[2]}${x[1]}</a>`).join("")}</nav>`;
   }
 
   function cookieHTML() {
@@ -237,7 +246,7 @@
     // Valovanje ob kliku na gumb
     document.addEventListener("pointerdown", e => {
       const b = e.target.closest(".btn, .chip, .quick");
-      if (!b || reduceMotion) return;
+      if (!b || reduceMotion || b.classList.contains("account-btn")) return;
       const r = b.getBoundingClientRect(), s = Math.max(r.width, r.height);
       const rip = document.createElement("span");
       rip.className = "ripple";
@@ -353,8 +362,8 @@
         firstBad = firstBad || el;
       }
     });
-    const fileReq = $("[data-file-required]", scope);
-    if (fileReq && !fileReq.dataset.name) { toast("Najprej naloži datoteko."); firstBad = firstBad || fileReq; }
+    const fileReq = $$("[data-file-required]", scope).find(z => !z.closest("[hidden]") && !z.dataset.name);
+    if (fileReq) { toast(fileReq.dataset.fileMsg || "Najprej naloži datoteko."); firstBad = firstBad || fileReq; }
     if (firstBad) { firstBad.focus(); return false; }
     return true;
   }
@@ -375,7 +384,10 @@
   /* Po prijavi ali odjavi osveži gumb za račun in spodnjo vrstico brez ponovnega nalaganja strani */
   function refreshChrome() {
     const a = $(".account-btn"), u = me();
-    if (a) { a.href = u ? "moj-racun.html" : "prijava.html"; $(".label", a).textContent = u ? (u.tip === "podjetje" ? u.naziv : u.ime) : "Prijava"; }
+    if (a) {
+      a.href = u ? "moj-racun.html" : "prijava.html"; $(".label", a).textContent = u ? (u.tip === "podjetje" ? u.naziv : u.ime) : "Prijava";
+      const old = $(".badge", a); if (old) old.remove(); a.insertAdjacentHTML("beforeend", badgeHTML(notifCount(u)));
+    }
     const bb = $(".bottom-bar"); if (bb) bb.outerHTML = bottomBarHTML();
   }
 
@@ -431,8 +443,15 @@
 
     const chips = $("#chips");
     const topKats = ["Strežba", "Delo v trgovini", "Računalniška dela, informatika", "Skladiščna dela", "Poučevanje"];
-    chips.innerHTML = topKats.map(k => `<button type="button" class="chip" data-kat="${k}" aria-pressed="${f.kat === k}">${k.split(",")[0]}</button>`).join("");
-    chips.addEventListener("click", e => { const c = e.target.closest(".chip"); if (!c) return; f.kat = f.kat === c.dataset.kat ? "" : c.dataset.kat; katSel.value = f.kat; run(); });
+    // »Za dijake« je prvi gumb, ker ga dijaki na telefonu niso našli v skritih filtrih (testiranje s personami, ugotovitev U1)
+    chips.innerHTML = `<button type="button" class="chip" data-dijaki aria-pressed="${f.dijaki}">Za dijake</button>` +
+      topKats.map(k => `<button type="button" class="chip" data-kat="${k}" aria-pressed="${f.kat === k}">${k.split(",")[0]}</button>`).join("");
+    chips.addEventListener("click", e => {
+      const c = e.target.closest(".chip"); if (!c) return;
+      if ("dijaki" in c.dataset) { f.dijaki = !f.dijaki; $("#fDijaki").checked = f.dijaki; }
+      else { f.kat = f.kat === c.dataset.kat ? "" : c.dataset.kat; katSel.value = f.kat; }
+      run();
+    });
 
     function run() {
       const q = f.q.trim().toLowerCase();
@@ -446,7 +465,7 @@
       jl.classList.remove("anim-in"); void jl.offsetWidth; jl.classList.add("anim-in");
       jl.innerHTML = list.length ? list.map((j, k) => jobCard(j).replace('class="job-card"', `class="job-card" style="--i:${Math.min(k, 8)}"`)).join("")
         : `<div class="card empty stack" style="align-items:center"><h3>Ni del, ki ustrezajo izbiri.</h3><p class="muted">Odstrani kakšen filter ali poišči z drugo besedo.</p><button class="btn btn-outline" id="clearAll" type="button">Počisti vse filtre</button></div>`;
-      $$(".chip", chips).forEach(c => c.setAttribute("aria-pressed", String(c.dataset.kat === f.kat)));
+      $$(".chip", chips).forEach(c => c.setAttribute("aria-pressed", String("dijaki" in c.dataset ? f.dijaki : c.dataset.kat === f.kat)));
       const p = new URLSearchParams(); Object.entries(f).forEach(([k, v]) => { if (v && !(k === "sort" && v === "novo")) p.set(k, v === true ? "1" : v); });
       history.replaceState(null, "", "prosta-dela.html" + (p.toString() ? "?" + p : ""));
       const n = [f.regija, f.kat, f.min, f.dijaki].filter(Boolean).length;
@@ -511,16 +530,19 @@
 
   PAGES.join = () => {
     if (me()) { $("#joinWrap").innerHTML = `<div class="card form-card stack"><h2>Že si prijavljen</h2><p class="muted">Prijavljen si kot ${esc(fullName(me()))}. Za nov račun se najprej odjavi.</p><div class="form-actions"><a class="btn btn-primary" href="moj-racun.html">Moj račun</a></div></div>`; return; }
-    const form = $("#joinForm"); const file = dropzone($(".dropzone", form));
+    const form = $("#joinForm"); const file = dropzone($("#jnPotrdilo"));
+    // Mladoletni potrebujejo soglasje staršev (testiranje s personami, ugotovitev U2)
+    const consent = dropzone($("#jnSoglasje")), minor = $("#jnMlad"), minorBox = $("#jnMladBox");
+    minor.addEventListener("change", () => { minorBox.hidden = !minor.checked; });
     wizard(form, {
-      onStep: i => { if (i === 2) $("#joinSummary").innerHTML = `<dt>Ime</dt><dd>${esc($("#jnIme").value)} ${esc($("#jnPriimek").value)}</dd><dt>E-pošta</dt><dd>${esc($("#jnEmail").value)}</dd><dt>Šola</dt><dd>${esc($("#jnSola").value)}</dd><dt>Potrdilo</dt><dd>${esc(file())}</dd><dt>TRR</dt><dd>${esc($("#jnTrr").value)}</dd>`; },
+      onStep: i => { if (i === 2) $("#joinSummary").innerHTML = `<dt>Ime</dt><dd>${esc($("#jnIme").value)} ${esc($("#jnPriimek").value)}</dd><dt>E-pošta</dt><dd>${esc($("#jnEmail").value)}</dd><dt>Šola</dt><dd>${esc($("#jnSola").value)}</dd><dt>Potrdilo</dt><dd>${esc(file())}</dd>${minor.checked ? `<dt>Soglasje staršev</dt><dd>${esc(consent())}</dd>` : ""}<dt>TRR</dt><dd>${esc($("#jnTrr").value)}</dd>`; },
       onFinish: () => {
         const email = $("#jnEmail").value.trim();
         const u = { id: uid("u"), tip: "student", email, geslo: salted(email, $("#jnGeslo").value),
           ime: $("#jnIme").value.trim(), priimek: $("#jnPriimek").value.trim(), tel: $("#jnTel").value.replace(/\s/g, ""),
           naslov: $("#jnNaslov").value.trim(), sola: $("#jnSola").value.trim(), trr: $("#jnTrr").value.replace(/\s/g, ""),
           clanska: "SS-" + (100000 + Math.floor(Math.random() * 899999)).toString().replace(/(\d{3})(\d{3})/, "$1 $2"),
-          status: { veljaven: true, do: "30. 9. 2027" }, zasluzki: [] };
+          mladoleten: minor.checked, status: { veljaven: true, do: "30. 9. 2027" }, zasluzki: [] };
         state.users.push(u); login(u);
         const next = nextUrl("");
         $("#joinWrap").innerHTML = successHTML(`Dobrodošel med člani, ${esc(u.ime)}!`, `Tvoja članska številka je <b>${u.clanska}</b>. Status velja do 30. 9. 2027. Prijavljen si in se lahko prijaviš na dela.`,
@@ -732,11 +754,17 @@
       </div></div>`;
     root.onclick = e => {
       const d = e.target.closest("[data-decide]"), t = e.target.closest("[data-toggle-job]"), r = e.target.closest("[data-confirm-ref]");
+      if (d && d.dataset.decide === "Zavrnjena" && !d.dataset.armed) {
+        // Zavrnitev zahteva drugi klik, da je kandidat ne zavrne po nesreči (ugotovitev U5)
+        d.dataset.armed = "1"; d.textContent = "Res zavrni?"; d.classList.add("btn-red"); d.classList.remove("btn-outline");
+        setTimeout(() => { if (d.isConnected) { delete d.dataset.armed; d.textContent = "Zavrni"; d.classList.remove("btn-red"); d.classList.add("btn-outline"); } }, 4000);
+        return;
+      }
       if (d) { const a = state.applications.find(x => x.id === d.dataset.id); a.status = d.dataset.decide; save(); toast(a.status === "Sprejeta" ? `${a.ime} je sprejet(a). Študent to vidi v svojem računu.` : "Prijava je zavrnjena."); }
       else if (t) { const j = state.jobs.find(x => String(x.id) === t.dataset.toggleJob); j.aktiven = j.aktiven === false; save(); toast(j.aktiven ? "Oglas je ponovno objavljen." : "Oglas je zaključen in ni več med prostimi deli."); }
       else if (r) { const n = state.referrals.find(x => x.st === r.dataset.confirmRef); n.status = "Potrjena"; save(); toast("Napotnica je potrjena."); }
       else return;
-      PAGES.account();
+      PAGES.account(); refreshChrome();
     };
   };
 
@@ -753,6 +781,10 @@
     const prev = () => {
       const j = { id: "nova", naziv: $("#ogNaziv").value || "Naziv dela", podjetje: $("#ogPodjetje").value || "Vaše podjetje", kraj: $("#ogKraj").value || "Kraj dela", cas: $("#ogCas").value || "Delovni čas", urna: parseFloat($("#ogUrna").value) || 0, kat: katSel.value || "Vrsta dela", dijaki: $("#ogDijaki").checked, objavljeno: "danes" };
       $("#ogPreview").innerHTML = jobCard(j).replace(/href="[^"]*"/, 'href="#" tabindex="-1" aria-hidden="true"').replace("Šifra nova", "Predogled");
+      // Delodajalec takoj vidi strošek in kaj dobi študent (testiranje s personami, ugotovitev U3)
+      $("#ogCost").innerHTML = j.urna > 0
+        ? `Vas stane <b>${eur(j.urna * (1 + SS.STOPNJE.dajatveDelodajalec))}</b> na uro z dajatvami. Študent prejme <b>${eur(j.urna * (1 - SS.STOPNJE.prispevkiStudent))}</b> neto. <a href="izracun-stroska.html">Podroben izračun</a>`
+        : "Najmanj zakonska minimalna urna postavka.";
     };
     $$("#postForm input, #postForm select, #postForm textarea").forEach(el => el.addEventListener("input", prev));
     prev();
