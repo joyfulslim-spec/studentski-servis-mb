@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="sl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vpis poslovnega partnerja – Študentski servis Maribor</title>
+  <link rel="icon" href="img/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Source+Sans+3:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="partner">
+<main id="main">
+  <section class="page-hero">
+    <div class="container">
+      <ol class="crumbs"><li><a href="index.html">Domov</a></li><li><a href="podjetja.html">Za podjetja</a></li><li>Vpis partnerja</li></ol>
+      <h1>Vpis poslovnega partnerja</h1>
+      <p class="lead">Po vpisu prejmete pogodbo o sodelovanju in dostop do e-poslovalnice.</p>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:24px">
+    <div class="container" id="partnerWrap">
+      <form class="card form-card stack" id="partnerForm" novalidate>
+        <h2 style="font-size:1.3rem">Podatki o podjetju</h2>
+        <div class="form-grid two">
+          <div class="field span-2"><label for="ptNaziv">Polni naziv podjetja <span class="req">*</span></label><input type="text" id="ptNaziv" autocomplete="organization" required></div>
+          <div class="field"><label for="ptDavcna">Davčna številka <span class="req">*</span></label><input type="text" id="ptDavcna" required data-pattern="^(SI)?[0-9]{8}$" data-msg="Davčna številka ima 8 števk (npr. SI12345678)."></div>
+          <div class="field"><label for="ptMaticna">Matična številka <span class="req">*</span></label><input type="text" id="ptMaticna" inputmode="numeric" required data-pattern="^[0-9]{7,10}$" data-msg="Matična številka ima 7 do 10 števk."></div>
+          <div class="field span-2"><label for="ptNaslov">Naslov sedeža <span class="req">*</span></label><input type="text" id="ptNaslov" autocomplete="street-address" required></div>
+          <div class="field"><label for="ptDejavnost">Dejavnost</label><input type="text" id="ptDejavnost" placeholder="npr. gostinstvo"></div>
+          <div class="field"><label for="ptStev">Predvideno število študentov na mesec</label><select id="ptStev"><option>1–5</option><option>6–20</option><option>21–50</option><option>več kot 50</option></select></div>
+        </div>
+        <h2 style="font-size:1.3rem">Kontaktna oseba</h2>
+        <div class="form-grid two">
+          <div class="field"><label for="ptOseba">Ime in priimek <span class="req">*</span></label><input type="text" id="ptOseba" autocomplete="name" required></div>
+          <div class="field"><label for="ptTel">Telefon <span class="req">*</span></label><input type="tel" id="ptTel" autocomplete="tel" required data-pattern="^\+?[0-9]{8,12}$" data-msg="Vpiši telefonsko številko, npr. 022345678."></div>
+          <div class="field span-2"><label for="ptEmail">E-pošta <span class="req">*</span></label><input type="email" id="ptEmail" autocomplete="email" required></div>
+        </div>
+        <label class="check"><input type="checkbox" required> Strinjam se s splošnimi pogoji poslovanja in obdelavo podatkov (GDPR – podjetja).</label>
+        <button class="btn btn-primary btn-block" type="submit">Oddaj vlogo</button>
+      </form>
+    </div>
+  </section>
+</main>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

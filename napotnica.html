@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="sl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Naroči napotnico – Študentski servis Maribor</title>
+  <meta name="description" content="Spletno naročilo e-napotnice za študentsko delo v treh korakih.">
+  <link rel="icon" href="img/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Source+Sans+3:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="referral">
+<main id="main">
+  <section class="page-hero">
+    <div class="container">
+      <ol class="crumbs"><li><a href="index.html">Domov</a></li><li>Za študente</li><li>Naroči napotnico</li></ol>
+      <h1>Naroči e-napotnico</h1>
+      <p class="lead">Napotnico potrebuješ pred začetkom vsakega dela. Delodajalec jo prejme elektronsko.</p>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:24px">
+    <div class="container" id="napWrap">
+      <div class="card form-card">
+        <ol class="stepper" style="--n:3"><li>Delo</li><li>Osebni podatki</li><li>Pregled</li></ol>
+        <form id="napForm" novalidate>
+          <section class="step form-grid two">
+            <h2 class="span-2">1. Za katero delo?</h2>
+            <div class="field span-2"><label for="npDelo">Delo <span class="req">*</span></label><select id="npDelo" required></select>
+              <span class="hint">Če si se na delo prijavil prek strani, je že izbrano.</span></div>
+            <div id="npOther" class="form-grid two span-2" hidden>
+              <div class="field"><label for="npPodjetje">Naziv podjetja <span class="req">*</span></label><input type="text" id="npPodjetje"></div>
+              <div class="field"><label for="npNaziv">Vrsta dela <span class="req">*</span></label><input type="text" id="npNaziv"></div>
+            </div>
+            <div class="field"><label for="npZacetek">Predviden začetek</label><input type="date" id="npZacetek"></div>
+            <div class="field"><label for="npUre">Predvideno število ur</label><input type="number" id="npUre" min="1" inputmode="numeric" placeholder="npr. 40"></div>
+          </section>
+
+          <section class="step form-grid two">
+            <h2 class="span-2">2. Osebni podatki</h2>
+            <div class="field span-2"><label for="npIme">Ime in priimek <span class="req">*</span></label><input type="text" id="npIme" autocomplete="name" required></div>
+            <div class="field"><label for="npEmso">EMŠO <span class="req">*</span></label><input type="text" id="npEmso" inputmode="numeric" maxlength="13" autocomplete="off" required data-pattern="^[0-9]{13}$" data-msg="EMŠO ima natanko 13 števk."><span class="hint">Testni EMŠO: 0101004500123</span></div>
+            <div class="field"><label for="npIzk">Št. študentske izkaznice <span class="req">*</span></label><input type="text" id="npIzk" required placeholder="npr. E1234567"></div>
+            <div class="field span-2"><label for="npEmail">E-pošta za obvestila <span class="req">*</span></label><input type="email" id="npEmail" autocomplete="email" required></div>
+            <div class="field span-2"><span class="label">Kako želiš prejeti napotnico?</span>
+              <div class="radio-cards">
+                <label class="radio-card"><input type="radio" name="prevzem" value="Elektronsko delodajalcu" checked><span><b>Elektronsko</b><span class="small muted">Delodajalec jo prejme takoj po potrditvi</span></span></label>
+                <label class="radio-card"><input type="radio" name="prevzem" value="Osebno v poslovalnici"><span><b>V poslovalnici</b><span class="small muted">Prevzem naslednji delovni dan</span></span></label>
+              </div></div>
+          </section>
+
+          <section class="step stack" data-next-label="Oddaj naročilo">
+            <h2>3. Preveri in oddaj</h2>
+            <dl class="summary" id="npSummary"></dl>
+            <label class="check"><input type="checkbox" required> Strinjam se z obdelavo osebnih podatkov za izdajo napotnice (GDPR).</label>
+          </section>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-outline" data-prev>Nazaj</button>
+            <button type="submit" class="btn btn-primary" data-next>Naprej</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+</main>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

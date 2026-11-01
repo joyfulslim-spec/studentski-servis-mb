@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="sl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Izračun stroška dela – Študentski servis Maribor</title>
+  <link rel="icon" href="img/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Source+Sans+3:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="costCalc">
+<main id="main">
+  <section class="page-hero">
+    <div class="container">
+      <ol class="crumbs"><li><a href="index.html">Domov</a></li><li><a href="podjetja.html">Za podjetja</a></li><li>Izračun stroška</li></ol>
+      <h1>Informativni izračun stroška dela</h1>
+      <p class="lead">Koliko podjetje stane študentsko delo, vključno z dajatvami.</p>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:24px">
+    <div class="container calc">
+      <form class="card form-grid" id="costForm">
+        <div class="field"><label for="kUrna">Bruto urna postavka (€)</label><input type="number" id="kUrna" min="0" step="0.1" inputmode="decimal" value="9.00"></div>
+        <div class="form-grid two">
+          <div class="field"><label for="kUre">Ure na študenta</label><input type="number" id="kUre" min="0" step="1" inputmode="numeric" value="80"></div>
+          <div class="field"><label for="kSt">Število študentov</label><input type="number" id="kSt" min="1" step="1" inputmode="numeric" value="2"></div>
+        </div>
+      </form>
+      <div class="result-box" aria-live="polite"><h3>Strošek za podjetje</h3><div id="kOut"></div></div>
+      <div class="notice warn" style="grid-column:1/-1">Izračun je informativen. Stopnja dajatev je v prototipu nastavljena na enem mestu (<code>js/data.js</code>), da jo je ob spremembi zakonodaje lahko posodobiti. Pred objavo jo preverite na portalu FURS.</div>
+    </div>
+  </section>
+</main>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

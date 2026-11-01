@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="sl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kontakt – Študentski servis Maribor</title>
+  <link rel="icon" href="img/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Source+Sans+3:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="contact">
+<main id="main">
+  <section class="page-hero">
+    <div class="container">
+      <ol class="crumbs"><li><a href="index.html">Domov</a></li><li>Kontakt</li></ol>
+      <h1>Kontakt</h1>
+      <p class="lead">Pišite nam ali pokličite. Odgovorimo v 1 delovnem dnevu.</p>
+    </div>
+  </section>
+  <section class="section" style="padding-top:24px">
+    <div class="container grid-2" style="align-items:start">
+      <div class="card">
+        <form id="contactForm" class="stack" novalidate>
+          <h2 style="font-size:1.3rem">Pošljite sporočilo</h2>
+          <div class="field"><span class="label">Sem</span>
+            <div class="radio-cards">
+              <label class="radio-card"><input type="radio" name="vloga" checked><span><b>Študent ali dijak</b></span></label>
+              <label class="radio-card"><input type="radio" name="vloga"><span><b>Podjetje</b></span></label>
+            </div></div>
+          <div class="field"><label for="ktIme">Ime in priimek <span class="req">*</span></label><input type="text" id="ktIme" autocomplete="name" required></div>
+          <div class="field"><label for="ktEmail">E-pošta <span class="req">*</span></label><input type="email" id="ktEmail" autocomplete="email" required></div>
+          <div class="field"><label for="ktTema">Tema</label><select id="ktTema"><option>Napotnica</option><option>Status in članstvo</option><option>Plačilo</option><option>Oglas za delo</option><option>Drugo</option></select></div>
+          <div class="field"><label for="ktMsg">Sporočilo <span class="req">*</span></label><textarea id="ktMsg" required></textarea></div>
+          <button class="btn btn-primary btn-block" type="submit">Pošlji sporočilo</button>
+        </form>
+      </div>
+      <div class="stack">
+        <div class="card stack-sm">
+          <h3>Sedež podjetja</h3>
+          <p>Študentski servis, d.o.o.<br>Gregorčičeva ulica 23, 2000 Maribor</p>
+        </div>
+        <div class="card stack-sm">
+          <h3>Za študente</h3>
+          <p>Telefon: <b>02 000 00 00</b> (vzorčna številka)<br>E-pošta: <b>clani@primer.si</b></p>
+        </div>
+        <div class="card stack-sm">
+          <h3>Za podjetja</h3>
+          <p>Telefon: <b>02 000 00 10</b> (vzorčna številka)<br>E-pošta: <b>podjetja@primer.si</b></p>
+        </div>
+        <a class="btn btn-outline" href="poslovalnice.html">Vse poslovalnice in urniki</a>
+      </div>
+    </div>
+  </section>
+</main>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

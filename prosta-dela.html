@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="sl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Prosta dela – Študentski servis Maribor</title>
+  <meta name="description" content="Prosta študentska in dijaška dela po regijah, vrsti dela in urni postavki.">
+  <link rel="icon" href="img/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Source+Sans+3:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="jobs">
+<main id="main">
+  <section class="page-hero">
+    <div class="container">
+      <ol class="crumbs"><li><a href="index.html">Domov</a></li><li>Za študente</li><li>Prosta dela</li></ol>
+      <h1>Prosta dela</h1>
+      <p class="lead">Plačilo, kraj in delovni čas vidiš že na seznamu. Rezultati se posodobijo takoj, ko spremeniš filter.</p>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:24px">
+    <div class="container stack">
+      <form id="searchForm" class="stack" role="search">
+        <div class="field">
+          <label for="fQ" class="sr-only">Iskanje</label>
+          <input type="search" id="fQ" placeholder="Išči po nazivu dela, podjetju, kraju ali šifri">
+        </div>
+        <div class="chip-row" id="chips" aria-label="Priljubljene vrste dela"></div>
+      </form>
+
+      <div class="jobs-layout">
+        <div>
+          <button class="btn btn-outline btn-block filter-toggle" id="filterToggle" type="button" aria-expanded="false" aria-controls="filtersPanel">Filtri <span id="filterCount"></span></button>
+          <aside class="card filters-panel" id="filtersPanel" hidden aria-label="Filtri">
+            <div class="field"><label for="fRegija">Regija</label><select id="fRegija"></select></div>
+            <div class="field"><label for="fKat">Vrsta dela</label><select id="fKat"></select></div>
+            <div class="field"><label for="fMin">Najmanj na uro (bruto)</label>
+              <select id="fMin"><option value="">Brez omejitve</option><option value="8">od 8 €</option><option value="9">od 9 €</option><option value="10">od 10 €</option><option value="12">od 12 €</option></select></div>
+            <label class="check"><input type="checkbox" id="fDijaki"> Samo dela, primerna za dijake</label>
+            <button class="link-btn" id="clearFilters" type="button" style="justify-self:start">Počisti filtre</button>
+          </aside>
+        </div>
+
+        <div class="stack">
+          <div class="results-head">
+            <p aria-live="polite">Najdenih del: <b id="count">0</b></p>
+            <div class="row" style="gap:8px"><label for="fSort" class="small muted">Razvrsti</label>
+              <select id="fSort" style="width:auto;min-height:42px"><option value="novo">Najnovejša</option><option value="urna">Najvišje plačilo</option></select></div>
+          </div>
+          <div class="job-list" id="jobList"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

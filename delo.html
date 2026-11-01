@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="sl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Delo – Študentski servis Maribor</title>
+  <link rel="icon" href="img/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Source+Sans+3:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="job">
+<main id="main">
+  <section class="page-hero">
+    <div class="container">
+      <ol class="crumbs"><li><a href="index.html">Domov</a></li><li><a href="prosta-dela.html">Prosta dela</a></li><li id="jCrumb">Delo</li></ol>
+      <h1 id="jTitle">Delo</h1>
+      <p class="lead" id="jSub"></p>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:24px">
+    <div class="container detail-layout">
+      <div class="stack">
+        <div class="photo" style="aspect-ratio:16/7"><img id="jPhoto" src="img/hero-studenti.jpg" alt="" width="1400" height="613"></div>
+        <article class="card prose" id="jBody"></article>
+        <div class="stack">
+          <h2>Podobna dela</h2>
+          <div class="job-list cols" id="similar"></div>
+        </div>
+      </div>
+
+      <aside class="detail-aside stack">
+        <div class="card stack">
+          <dl class="facts" id="jFacts"></dl>
+          <a class="small" href="kalkulator.html" id="calcLink">Izračunaj zaslužek za to delo</a>
+        </div>
+        <div class="card" id="applyBox">
+          <form id="applyForm" class="stack" novalidate>
+            <h2 style="font-size:1.3rem">Prijavi se na delo</h2>
+            <div class="field"><label for="apIme">Ime in priimek <span class="req">*</span></label><input type="text" id="apIme" autocomplete="name" required></div>
+            <div class="field"><label for="apTel">Telefon <span class="req">*</span></label><input type="tel" id="apTel" autocomplete="tel" inputmode="tel" required data-pattern="^\+?[0-9]{8,12}$" data-msg="Vpiši telefonsko številko, npr. 041123456." placeholder="041 123 456"></div>
+            <div class="field"><label for="apEmail">E-pošta <span class="req">*</span></label><input type="email" id="apEmail" autocomplete="email" required></div>
+            <div class="field"><label for="apMsg">Sporočilo delodajalcu</label><textarea id="apMsg" placeholder="Kdaj lahko začneš in koliko ur na teden imaš čas?"></textarea></div>
+            <label class="check"><input type="checkbox" required> Strinjam se, da servis moje podatke posreduje delodajalcu.</label>
+            <button class="btn btn-red btn-block" type="submit">Pošlji prijavo</button>
+          </form>
+        </div>
+      </aside>
+    </div>
+  </section>
+</main>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script>document.getElementById("calcLink").href = "kalkulator.html" + location.search.replace("id=", "job=");</script>
+</body>
+</html>

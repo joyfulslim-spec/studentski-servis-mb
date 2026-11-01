@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="sl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Prijava – Študentski servis Maribor</title>
+  <link rel="icon" href="img/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Source+Sans+3:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="login">
+<main id="main">
+  <section class="section">
+    <div class="container">
+      <div class="card form-card stack" style="max-width:460px">
+        <img src="img/logo.svg" alt="Študentski servis Maribor" width="150" height="48" style="height:48px;width:auto">
+        <h1 style="font-size:1.7rem">Prijava v Moj račun</h1>
+        <p class="muted">Tu vidiš svoj status, napotnice, prijave na dela in zaslužek.</p>
+        <form id="loginForm" class="stack" novalidate>
+          <div class="field"><label for="lgEmail">E-pošta ali članska številka</label><input type="text" id="lgEmail" autocomplete="username" required></div>
+          <div class="field"><label for="lgPass">Geslo</label><input type="password" id="lgPass" autocomplete="current-password" required><a class="small" href="kontakti.html">Pozabljeno geslo?</a></div>
+          <button class="btn btn-primary btn-block" type="submit">Prijava</button>
+        </form>
+        <div class="notice">V prototipu ni pravih računov. <button class="link-btn" id="demoLogin" type="button">Izpolni testne podatke</button> in klikni Prijava.</div>
+        <p class="small">Še nisi član? <a href="vclani-se.html">Včlani se na spletu</a></p>
+      </div>
+    </div>
+  </section>
+</main>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

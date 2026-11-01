@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="sl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kalkulator zaslužka – Študentski servis Maribor</title>
+  <meta name="description" content="Izračunaj neto zaslužek za študentsko delo.">
+  <link rel="icon" href="img/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Source+Sans+3:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="calc">
+<main id="main">
+  <section class="page-hero">
+    <div class="container">
+      <ol class="crumbs"><li><a href="index.html">Domov</a></li><li>Za študente</li><li>Kalkulator zaslužka</li></ol>
+      <h1>Kalkulator zaslužka</h1>
+      <p class="lead">Vpiši urno postavko in število ur. Rezultat se izračuna sproti.</p>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:24px">
+    <div class="container calc">
+      <form class="card stack" id="calcForm">
+        <div class="seg" role="group" aria-label="Način izračuna">
+          <button type="button" data-mode="bruto" aria-pressed="true">Iz bruto zneska</button>
+          <button type="button" data-mode="neto" aria-pressed="false">Iz neto zneska</button>
+        </div>
+        <div class="form-grid two">
+          <div class="field"><label for="cUrna" id="cUrnaLbl">Bruto urna postavka (€)</label><input type="number" id="cUrna" min="0" step="0.1" inputmode="decimal" value="9.00"></div>
+          <div class="field"><label for="cUre">Število ur</label><input type="number" id="cUre" min="0" step="1" inputmode="numeric" value="40"></div>
+        </div>
+        <p class="hint">Za podjetja: <a href="izracun-stroska.html">izračun skupnega stroška dela</a>.</p>
+      </form>
+      <div class="result-box" aria-live="polite">
+        <h3>Tvoj zaslužek</h3>
+        <div id="cOut"></div>
+      </div>
+      <div class="notice" style="grid-column:1/-1">
+        <b>Kako računamo?</b> Od bruto zneska se odvedejo prispevki za pokojninsko in invalidsko zavarovanje (15,5 %). Akontacija dohodnine se ne odvaja, če ne presežeš letne olajšave – več na strani <a href="dohodnina-obrazci.html">Dohodnina in obrazci</a>. Izračun je informativen.
+      </div>
+    </div>
+  </section>
+</main>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

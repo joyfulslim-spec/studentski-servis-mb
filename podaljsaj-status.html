@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="sl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Podaljšaj status – Študentski servis Maribor</title>
+  <meta name="description" content="Podaljšaj status dijaka ali študenta s potrdilom o vpisu – v treh korakih, tudi s telefona.">
+  <link rel="icon" href="img/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Source+Sans+3:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="status">
+<main id="main">
+  <section class="page-hero">
+    <div class="container">
+      <ol class="crumbs"><li><a href="index.html">Domov</a></li><li>Za študente</li><li>Podaljšaj status</li></ol>
+      <h1>Podaljšaj status</h1>
+      <p class="lead">Za novo šolsko leto potrebuješ potrdilo o vpisu. Postopek traja približno 2 minuti.</p>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:24px">
+    <div class="container" id="statusWrap">
+      <div class="card form-card">
+        <ol class="stepper" style="--n:3"><li>Podatki</li><li>Potrdilo o vpisu</li><li>Pregled</li></ol>
+        <form id="statusForm" novalidate>
+          <section class="step form-grid two">
+            <h2 class="span-2">1. Tvoji podatki</h2>
+            <div class="field span-2"><label for="stIme">Ime in priimek <span class="req">*</span></label><input type="text" id="stIme" autocomplete="name" required></div>
+            <div class="field"><label for="stEmail">E-pošta <span class="req">*</span></label><input type="email" id="stEmail" autocomplete="email" required></div>
+            <div class="field"><label for="stClan">Članska številka</label><input type="text" id="stClan" placeholder="npr. SS-104 552"><span class="hint">Najdeš jo na članski izkaznici. Če je ne poznaš, polje pusti prazno.</span></div>
+            <div class="field span-2"><label for="stSola">Šola ali fakulteta <span class="req">*</span></label>
+              <select id="stSola" required>
+                <option value="">Izberi …</option>
+                <option>Univerza v Mariboru – FERI</option><option>Univerza v Mariboru – EPF</option><option>Univerza v Mariboru – Filozofska fakulteta</option>
+                <option>Univerza v Mariboru – Pravna fakulteta</option><option>Univerza v Ljubljani</option><option>Srednja šola (dijak)</option><option>Druga šola</option>
+              </select></div>
+            <div class="field span-2"><span class="label">Šolsko leto <span class="req">*</span></span>
+              <div class="radio-cards">
+                <label class="radio-card"><input type="radio" name="leto" value="2026/27" checked><span><b>2026/27</b><span class="small muted">status do 30. 9. 2027</span></span></label>
+                <label class="radio-card"><input type="radio" name="leto" value="2027/28"><span><b>2027/28</b><span class="small muted">status do 30. 9. 2028</span></span></label>
+              </div>
+              <input type="hidden" id="stLeto" value="2026/27">
+            </div>
+          </section>
+
+          <section class="step stack">
+            <h2>2. Potrdilo o vpisu</h2>
+            <p class="muted">Potrdilo dobiš v študentskem informacijskem sistemu ali v referatu. Na telefonu ga lahko tudi fotografiraš.</p>
+            <div class="dropzone" data-file-required tabindex="-1">
+              <span style="color:var(--navy)"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg></span>
+              <b data-title>Povleci datoteko sem ali jo izberi</b>
+              <span class="small muted" data-sub>PDF, JPG ali PNG, največ 5 MB</span>
+              <label class="btn btn-outline btn-sm" for="stFile">Izberi datoteko</label>
+              <input type="file" id="stFile" accept=".pdf,image/*" class="sr-only">
+              <button type="button" class="link-btn small" data-demo-file="potrdilo_o_vpisu_2026-27.pdf">Uporabi testno potrdilo</button>
+            </div>
+          </section>
+
+          <section class="step stack" data-next-label="Podaljšaj status">
+            <h2>3. Preveri in potrdi</h2>
+            <dl class="summary" id="stSummary"></dl>
+            <label class="check"><input type="checkbox" required> Potrjujem, da so podatki resnični, in se strinjam z obdelavo osebnih podatkov za vodenje članstva.</label>
+          </section>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-outline" data-prev>Nazaj</button>
+            <button type="submit" class="btn btn-primary" data-next>Naprej</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+</main>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script>document.querySelectorAll("input[name=leto]").forEach(r => r.addEventListener("change", () => document.getElementById("stLeto").value = r.value));</script>
+</body>
+</html>

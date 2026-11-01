@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="sl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Včlani se – Študentski servis Maribor</title>
+  <meta name="description" content="Spletna včlanitev v Študentski servis Maribor v treh korakih.">
+  <link rel="icon" href="img/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Source+Sans+3:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="join">
+<main id="main">
+  <section class="page-hero">
+    <div class="container">
+      <ol class="crumbs"><li><a href="index.html">Domov</a></li><li>Za študente</li><li>Včlani se</li></ol>
+      <h1>Včlani se</h1>
+      <p class="lead">Članstvo je brezplačno. Pripravi potrdilo o vpisu in številko svojega bančnega računa (TRR).</p>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:24px">
+    <div class="container" id="joinWrap">
+      <div class="card form-card">
+        <ol class="stepper" style="--n:3"><li>Osebni podatki</li><li>Šola in račun</li><li>Pregled</li></ol>
+        <form id="joinForm" novalidate>
+          <section class="step form-grid two">
+            <h2 class="span-2">1. Osebni podatki</h2>
+            <div class="field"><label for="jnIme">Ime <span class="req">*</span></label><input type="text" id="jnIme" autocomplete="given-name" required></div>
+            <div class="field"><label for="jnPriimek">Priimek <span class="req">*</span></label><input type="text" id="jnPriimek" autocomplete="family-name" required></div>
+            <div class="field"><label for="jnEmso">EMŠO <span class="req">*</span></label><input type="text" id="jnEmso" inputmode="numeric" maxlength="13" required data-pattern="^[0-9]{13}$" data-msg="EMŠO ima natanko 13 števk."></div>
+            <div class="field"><label for="jnDavcna">Davčna številka <span class="req">*</span></label><input type="text" id="jnDavcna" inputmode="numeric" maxlength="8" required data-pattern="^[0-9]{8}$" data-msg="Davčna številka ima 8 števk."></div>
+            <div class="field"><label for="jnEmail">E-pošta <span class="req">*</span></label><input type="email" id="jnEmail" autocomplete="email" required></div>
+            <div class="field"><label for="jnTel">Telefon <span class="req">*</span></label><input type="tel" id="jnTel" autocomplete="tel" inputmode="tel" required data-pattern="^\+?[0-9]{8,12}$" data-msg="Vpiši telefonsko številko, npr. 041123456."></div>
+            <div class="field span-2"><label for="jnNaslov">Naslov stalnega prebivališča <span class="req">*</span></label><input type="text" id="jnNaslov" autocomplete="street-address" required></div>
+          </section>
+
+          <section class="step form-grid">
+            <h2>2. Šola in bančni račun</h2>
+            <div class="field"><label for="jnSola">Šola ali fakulteta <span class="req">*</span></label><input type="text" id="jnSola" required placeholder="npr. Univerza v Mariboru – FERI"></div>
+            <div class="field"><label for="jnTrr">Številka TRR (IBAN) <span class="req">*</span></label><input type="text" id="jnTrr" required placeholder="SI56 …" data-pattern="^SI56[0-9]{15}$" data-msg="IBAN se začne s SI56 in ima skupaj 19 znakov."><span class="hint">Na ta račun boš prejemal plačila za delo.</span></div>
+            <div class="dropzone" data-file-required tabindex="-1">
+              <b data-title>Naloži potrdilo o vpisu</b>
+              <span class="small muted" data-sub>PDF, JPG ali PNG, največ 5 MB</span>
+              <label class="btn btn-outline btn-sm" for="jnFile">Izberi datoteko</label>
+              <input type="file" id="jnFile" accept=".pdf,image/*" class="sr-only">
+              <button type="button" class="link-btn small" data-demo-file="potrdilo_o_vpisu.pdf">Uporabi testno potrdilo</button>
+            </div>
+          </section>
+
+          <section class="step stack" data-next-label="Včlani me">
+            <h2>3. Preveri in potrdi</h2>
+            <dl class="summary" id="joinSummary"></dl>
+            <label class="check"><input type="checkbox" required> Sprejemam splošne pogoje poslovanja.</label>
+            <label class="check"><input type="checkbox" required> Strinjam se z obdelavo osebnih podatkov za namen posredovanja dela (GDPR).</label>
+            <label class="check"><input type="checkbox"> Želim prejemati obvestila o novih delih po e-pošti.</label>
+          </section>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-outline" data-prev>Nazaj</button>
+            <button type="submit" class="btn btn-primary" data-next>Naprej</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+</main>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
