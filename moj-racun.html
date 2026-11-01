@@ -24,35 +24,7 @@
   </section>
 
   <section class="section" style="padding-top:24px">
-    <div class="container dash">
-      <nav class="dash-nav" aria-label="Moj račun">
-        <a href="#pregled">Pregled</a><a href="#zasluzek">Zaslužek</a><a href="#napotnice">Napotnice</a><a href="#prijave">Prijave na dela</a><a href="#hitro">Hitra dejanja</a>
-      </nav>
-      <div class="stack">
-        <div id="accAlert"></div>
-        <div id="pregled"><div class="kpis" id="kpis"></div></div>
-
-        <div class="card stack" id="zasluzek">
-          <div class="row between"><h2 style="font-size:1.3rem">Neto zaslužek po mesecih</h2><span class="small muted">v evrih</span></div>
-          <div class="bars" id="bars"></div>
-        </div>
-
-        <div class="card stack" id="napotnice">
-          <div class="row between"><h2 style="font-size:1.3rem">Moje napotnice</h2><a class="btn btn-primary btn-sm" href="napotnica.html">Nova napotnica</a></div>
-          <div class="table-wrap"><table class="tbl"><thead><tr><th>Številka</th><th>Delodajalec</th><th>Datum</th><th>Stanje</th></tr></thead><tbody id="napTable"></tbody></table></div>
-        </div>
-
-        <div class="stack" id="prijave">
-          <h2 style="font-size:1.3rem">Moje prijave na dela</h2>
-          <div class="job-list cols" id="appList"></div>
-        </div>
-
-        <div class="card stack" id="hitro">
-          <h2 style="font-size:1.3rem">Hitra dejanja</h2>
-          <div class="row"><a class="btn btn-outline" href="podaljsaj-status.html">Podaljšaj status</a><a class="btn btn-outline" href="kalkulator.html">Kalkulator</a><a class="btn btn-outline" href="dohodnina-obrazci.html">Dohodnina</a></div>
-        </div>
-      </div>
-    </div>
+    <div class="container" id="accRoot"></div>
   </section>
 </main>
 <script src="js/data.js"></script>
