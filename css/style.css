@@ -31,6 +31,14 @@
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 [id] { scroll-margin-top: calc(var(--header-h) + 12px); }
+/* Rezerviran prostor za vsebino, ki jo izriše JavaScript, da se stran med nalaganjem ne premika (CLS) */
+#latestJobs:empty { min-height: 330px; }
+#homeNews:empty { min-height: 180px; }
+#jobList:empty { min-height: 600px; }
+#accRoot:empty { min-height: 600px; }
+#offices:empty, #newsList:empty { min-height: 400px; }
+#jFacts:empty { min-height: 200px; }
+#jBody:empty { min-height: 260px; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; animation: none !important; } }
 body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 17px; line-height: 1.55; }
 img { max-width: 100%; display: block; }
