@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="sl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pozabljeno geslo – Študentski servis Maribor</title>
+  <link rel="icon" href="img/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&family=Source+Sans+3:wght@400;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&family=Source+Sans+3:wght@400;700&display=swap"></noscript>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="reset">
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<main id="main">
+  <section class="section">
+    <div class="container">
+      <div class="card form-card stack" style="max-width:460px" id="resetWrap">
+        <h1 style="font-size:1.7rem">Pozabljeno geslo</h1>
+        <form id="resetForm" class="stack" novalidate>
+          <p class="muted">Vpiši e-naslov, s katerim se prijavljaš. Poslali ti bomo povezavo za novo geslo.</p>
+          <div class="field"><label for="rsEmail">E-pošta</label><input type="email" id="rsEmail" autocomplete="email" required></div>
+          <button class="btn btn-primary btn-block" type="submit">Pošlji povezavo</button>
+          <a class="small" href="prijava.html">Nazaj na prijavo</a>
+        </form>
+        <div id="resetSent" class="stack" hidden>
+          <span class="tag tag-ok" style="align-self:flex-start">Povezava je poslana</span>
+          <p>Če račun s tem naslovom obstaja, smo nanj poslali povezavo za novo geslo. Velja 30 minut.</p>
+          <div class="notice small">Prototip ne pošilja e-pošte. Povezavo iz e-pošte lahko preizkusiš tukaj: <button class="link-btn" id="resetOpen" type="button">Odpri povezavo iz e-pošte</button></div>
+        </div>
+        <form id="newPassForm" class="stack" hidden novalidate>
+          <p class="muted">Nastavi novo geslo za <b id="rsFor"></b>.</p>
+          <div class="field"><label for="rsGeslo">Novo geslo</label><input type="password" id="rsGeslo" autocomplete="new-password" required data-minlen="8"><span class="hint">Vsaj 8 znakov.</span></div>
+          <div class="field"><label for="rsGeslo2">Ponovi geslo</label><input type="password" id="rsGeslo2" autocomplete="new-password" required data-match="#rsGeslo"></div>
+          <button class="btn btn-primary btn-block" type="submit">Shrani geslo in se prijavi</button>
+        </form>
+      </div>
+    </div>
+  </section>
+</main>
+</body>
+</html>
