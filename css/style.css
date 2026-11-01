@@ -89,6 +89,11 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .header-actions { display: flex; align-items: center; gap: 8px; }
 .header-actions .btn { min-height: 42px; }
 .account-btn .label { display: none; }
+.badge { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--red); color: var(--white); font-size: .74rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; animation: pop .45s var(--ease-pop, ease) both; }
+.account-btn { position: relative; overflow: visible !important; }
+.account-btn .badge { position: absolute; top: -7px; right: -7px; box-shadow: 0 0 0 2px var(--white); }
+.ico-wrap { position: relative; display: inline-flex; }
+.ico-wrap .badge { position: absolute; top: -6px; right: -12px; min-width: 18px; height: 18px; font-size: .68rem; box-shadow: 0 0 0 2px var(--white); }
 .menu-toggle { display: inline-flex; align-items: center; justify-content: center; width: 46px; height: 46px; border-radius: 10px; border: 1px solid var(--line); background: var(--white); cursor: pointer; }
 .menu-toggle svg { width: 24px; height: 24px; }
 
