@@ -343,5 +343,132 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: .95rem; min-width
 .cookie .row { flex: 1 1 260px; flex-wrap: nowrap; max-width: 360px; }
 .cookie .row .btn { flex: 1 1 0; }
 
-.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(84px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--white); padding: 12px 18px; border-radius: 10px; font-weight: 700; z-index: 70; max-width: calc(100% - 32px); }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(84px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--white); padding: 12px 18px; border-radius: 10px; font-weight: 700; z-index: 70; max-width: calc(100% - 32px); animation: toast-in .35s cubic-bezier(.2,.9,.3,1.2); }
 @media (min-width: 1024px) { .toast { bottom: 24px; } }
+
+/* =========================================================
+   Animacije in mikro-interakcije
+   Pravilo: vsebina je vidna tudi brez JavaScripta; animacije
+   se izklopijo pri »prefers-reduced-motion« (glej vrh datoteke).
+   ========================================================= */
+:root { --ease: cubic-bezier(.2, .8, .2, 1); --ease-pop: cubic-bezier(.2, .9, .3, 1.25); }
+
+@keyframes toast-in { from { opacity: 0; transform: translate(-50%, 16px); } }
+@keyframes fade-up { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+@keyframes fade-in { from { opacity: 0; } }
+@keyframes hero-zoom { from { transform: scale(1.12); } to { transform: scale(1); } }
+@keyframes pop { 0% { transform: scale(.4); opacity: 0; } 70% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); } }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+@keyframes ring { from { box-shadow: 0 0 0 0 rgba(23,121,74,.35); } to { box-shadow: 0 0 0 18px rgba(23,121,74,0); } }
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@keyframes bar-grow { from { transform: scaleY(0); } }
+@keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+
+/* Glava: senca ob drsenju */
+.site-header { transition: box-shadow .25s var(--ease), background .25s; }
+.site-header.scrolled { box-shadow: 0 6px 20px rgba(0, 50, 99, .10); }
+
+/* Spustni meni: rahel zdrs namesto skoka */
+.dropdown { display: block; opacity: 0; visibility: hidden; transform: translateY(-6px); transition: opacity .18s var(--ease), transform .18s var(--ease), visibility .18s; }
+.nav-item.open .dropdown { opacity: 1; visibility: visible; transform: none; }
+.nav-link svg { transition: transform .2s var(--ease); }
+.nav-link[aria-expanded="true"] svg { transform: rotate(180deg); }
+
+/* Mobilni meni: zdrs z desne */
+.drawer { display: flex; visibility: hidden; transform: translateX(100%); transition: transform .32s var(--ease), visibility .32s; }
+.drawer.open { visibility: visible; transform: none; }
+.drawer.open .drawer-body > * { animation: fade-up .4s var(--ease) both; }
+.drawer.open .drawer-body > *:nth-child(2) { animation-delay: .05s; }
+.drawer.open .drawer-body > *:nth-child(3) { animation-delay: .1s; }
+.drawer.open .drawer-body > *:nth-child(4) { animation-delay: .15s; }
+
+/* Domača stran: počasen zoom ozadja in zaporedni prihod besedila */
+.home-hero::before { animation: hero-zoom 9s var(--ease) both; }
+.home-hero .container > * { animation: fade-up .7s var(--ease) both; }
+.home-hero .container > *:nth-child(2) { animation-delay: .08s; }
+.home-hero .container > *:nth-child(3) { animation-delay: .16s; }
+.home-hero .container > *:nth-child(4) { animation-delay: .24s; }
+.page-hero .container > * { animation: fade-up .55s var(--ease) both; }
+.page-hero .container > *:nth-child(2) { animation-delay: .06s; }
+.page-hero .container > *:nth-child(3) { animation-delay: .12s; }
+.since::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--yellow); animation: pulse-dot 2s ease-in-out infinite; }
+
+/* Iskalnik: poudarek ob fokusu */
+.search-box { transition: box-shadow .25s var(--ease), transform .25s var(--ease); }
+.search-box:focus-within { box-shadow: 0 0 0 4px rgba(255, 210, 63, .55), 0 14px 40px rgba(0,0,0,.25); transform: translateY(-2px); }
+
+/* Gumbi: dvig, sij in pritisk */
+.btn { position: relative; overflow: hidden; transition: background .2s, border-color .2s, transform .15s var(--ease), box-shadow .2s; }
+.btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0, 50, 99, .16); }
+.btn:active:not(:disabled) { transform: translateY(1px) scale(.98); box-shadow: none; }
+.btn-accent::after, .btn-red::after, .btn-primary::after { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,.28) 50%, transparent 70%); background-size: 200% 100%; background-position: 200% 0; pointer-events: none; }
+.btn-accent:hover::after, .btn-red:hover::after, .btn-primary:hover::after { animation: shimmer .8s var(--ease); }
+.ripple { position: absolute; border-radius: 50%; background: currentColor; opacity: .25; transform: scale(0); animation: ripple .55s var(--ease) forwards; pointer-events: none; }
+@keyframes ripple { to { transform: scale(2.6); opacity: 0; } }
+
+/* Kartice: dvig ob prehodu z miško, ikona se rahlo premakne */
+.quick, .job-card, .news-card, .kpi, .office, .radio-card, .file-row { transition: transform .25s var(--ease), box-shadow .25s var(--ease), border-color .2s, background .2s; }
+.quick:hover, .job-card:hover, .news-card:hover, .office:hover { transform: translateY(-4px); box-shadow: 0 14px 30px rgba(0, 50, 99, .12); }
+.quick .ico { transition: transform .3s var(--ease-pop), background .2s, color .2s; }
+.quick:hover .ico { transform: scale(1.1) rotate(-6deg); background: var(--navy); color: var(--white); }
+.job-card .pay b { transition: color .2s; }
+.job-card:hover .pay b { color: var(--red); }
+.job-card:hover h3 { text-decoration: underline; text-decoration-color: var(--yellow); text-decoration-thickness: 3px; text-underline-offset: 4px; }
+.radio-card:hover { border-color: var(--navy); }
+.chip { transition: background .2s, color .2s, border-color .2s, transform .15s var(--ease-pop); }
+.chip:hover { border-color: var(--navy); }
+.chip:active { transform: scale(.94); }
+.photo img { transition: transform .8s var(--ease); }
+.photo:hover img { transform: scale(1.04); }
+
+/* Pojav ob drsenju (razred doda JavaScript; brez njega je vse vidno) */
+.js .reveal { opacity: 0; transform: translateY(22px); transition: opacity .6s var(--ease), transform .6s var(--ease); transition-delay: var(--d, 0s); }
+.js .reveal.in { opacity: 1; transform: none; }
+
+/* Seznam del: kartice priletijo ob spremembi filtra */
+.anim-in > * { animation: fade-up .45s var(--ease) both; animation-delay: calc(var(--i, 0) * 45ms); }
+
+/* Obrazci: drsenje med koraki, števec korakov se polni */
+.step:not([hidden]) { animation: fade-up .4s var(--ease) both; }
+.stepper li::before { background: linear-gradient(var(--navy), var(--navy)) no-repeat left / 0% 100%, var(--line); transition: background-size .45s var(--ease); }
+.stepper li.done::before { background: linear-gradient(var(--navy), var(--navy)) no-repeat left / 100% 100%, var(--line); }
+.stepper li.current::before { background: linear-gradient(var(--red), var(--red)) no-repeat left / 100% 100%, var(--line); }
+input, select, textarea { transition: border-color .2s, box-shadow .2s; }
+.error { animation: fade-up .25s var(--ease) both; }
+[aria-invalid="true"] { animation: shake .35s; }
+@keyframes shake { 20%, 60% { transform: translateX(-4px); } 40%, 80% { transform: translateX(4px); } }
+.dropzone { transition: border-color .2s, background .2s, transform .2s var(--ease); }
+.dropzone.drag { transform: scale(1.01); }
+.dropzone.has-file b { animation: fade-up .3s var(--ease) both; }
+
+/* Uspeh: kljukica se nariše */
+.success > * { animation: fade-up .5s var(--ease) both; }
+.success > *:nth-child(2) { animation-delay: .25s; }
+.success > *:nth-child(3) { animation-delay: .32s; }
+.success > *:nth-child(4) { animation-delay: .4s; }
+.success .tick { animation: pop .5s var(--ease-pop) both, ring 1.2s .4s ease-out; }
+.success .tick path { stroke-dasharray: 30; stroke-dashoffset: 30; animation: draw .45s .3s var(--ease) forwards; }
+
+/* Kalkulator in Moj račun */
+.result-total { display: inline-block; transition: transform .2s var(--ease-pop); }
+.result-total.bump { transform: scale(1.06); }
+.bar i { transform-origin: bottom; animation: bar-grow .8s var(--ease) both; animation-delay: calc(var(--i, 0) * 70ms + .2s); }
+.bar:hover i { filter: brightness(1.25); }
+.accordion summary { transition: background .2s; border-radius: 10px; }
+.accordion summary:hover { background: var(--navy-50); }
+.accordion details[open] .acc-body { animation: fade-up .3s var(--ease) both; }
+
+/* Gumb »na vrh« */
+.to-top { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(80px + env(safe-area-inset-bottom, 0px)); z-index: 39; width: 46px; height: 46px; border-radius: 50%; border: 0; background: var(--navy); color: var(--white); display: grid; place-items: center; cursor: pointer; box-shadow: var(--shadow); opacity: 0; transform: translateY(12px) scale(.9); pointer-events: none; transition: opacity .25s var(--ease), transform .25s var(--ease); }
+.to-top.show { opacity: 1; transform: none; pointer-events: auto; }
+.to-top svg { width: 22px; height: 22px; }
+@media (min-width: 1024px) { .to-top { bottom: 24px; } }
+
+/* Napredek drsenja pod glavo */
+.scroll-progress { position: absolute; left: 0; bottom: -1px; height: 3px; width: 100%; background: linear-gradient(90deg, var(--red), var(--yellow)); transform-origin: left; transform: scaleX(var(--p, 0)); }
+
+@media (prefers-reduced-motion: reduce) {
+  .js .reveal { opacity: 1; transform: none; }
+  .drawer { transition: none; }
+  .success .tick path { stroke-dashoffset: 0; }
+}
