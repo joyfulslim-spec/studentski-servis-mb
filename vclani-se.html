@@ -43,12 +43,23 @@
             <h2>2. Šola in bančni račun</h2>
             <div class="field"><label for="jnSola">Šola ali fakulteta <span class="req">*</span></label><input type="text" id="jnSola" required placeholder="npr. Univerza v Mariboru – FERI"></div>
             <div class="field"><label for="jnTrr">Številka TRR (IBAN) <span class="req">*</span></label><input type="text" id="jnTrr" required placeholder="SI56 …" data-pattern="^SI56[0-9]{15}$" data-msg="IBAN se začne s SI56 in ima skupaj 19 znakov."><span class="hint">Na ta račun boš prejemal plačila za delo.</span></div>
-            <div class="dropzone" data-file-required tabindex="-1">
+            <div class="dropzone" id="jnPotrdilo" data-file-required data-file-msg="Naloži potrdilo o vpisu." tabindex="-1">
               <b data-title>Naloži potrdilo o vpisu</b>
               <span class="small muted" data-sub>PDF, JPG ali PNG, največ 5 MB</span>
               <label class="btn btn-outline btn-sm" for="jnFile">Izberi datoteko</label>
               <input type="file" id="jnFile" accept=".pdf,image/*" class="sr-only">
               <button type="button" class="link-btn small" data-demo-file="potrdilo_o_vpisu.pdf">Uporabi testno potrdilo</button>
+            </div>
+            <label class="check"><input type="checkbox" id="jnMlad"> Mlajši/a sem od 18 let (dijak/dijakinja)</label>
+            <div id="jnMladBox" class="stack" hidden>
+              <div class="notice">Za mladoletne potrebujemo <b>soglasje staršev ali skrbnika</b>. Obrazec natisni na strani <a href="dohodnina-obrazci.html" target="_blank">Dohodnina in obrazci</a>, ga podpiši s staršem in naloži sliko ali PDF.</div>
+              <div class="dropzone" id="jnSoglasje" data-file-required data-file-msg="Naloži podpisano soglasje staršev." tabindex="-1">
+                <b data-title>Naloži soglasje staršev</b>
+                <span class="small muted" data-sub>Slika ali PDF podpisanega obrazca</span>
+                <label class="btn btn-outline btn-sm" for="jnFile2">Izberi datoteko</label>
+                <input type="file" id="jnFile2" accept=".pdf,image/*" class="sr-only">
+                <button type="button" class="link-btn small" data-demo-file="soglasje_starsev.pdf">Uporabi testno soglasje</button>
+              </div>
             </div>
           </section>
 
