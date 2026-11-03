@@ -8,6 +8,13 @@ SS.STOPNJE = {
   dajatveDelodajalec: 0.2738 // informativni pribitek delodajalca (koncesijska dajatev + prispevki) – preveri pri FURS
 };
 
+/* Barva vsake vrste dela (oznake in sličice na seznamu del) */
+SS.KAT_BARVE = {
+  "Strežba": "#d9480f", "Delo v trgovini": "#2b8a3e", "Skladiščna dela": "#0c8599", "Računalniška dela, informatika": "#6741d9",
+  "Administrativna dela": "#3b5bdb", "Poučevanje": "#1971c2", "Promocije, degustacije, hostese": "#c2255c",
+  "Raznos, razvoz, dostava": "#e67700", "Proizvodna dela": "#495057", "Delo z otroki": "#d6336c",
+};
+
 SS.REGIJE = ["Mariborska", "Pomurska", "Ptujska", "Celjska", "Savinjska", "Velenjska", "Koroška", "Delo od doma"];
 
 SS.KATEGORIJE = [

@@ -126,7 +126,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .drawer.open { display: flex; }
 .drawer-head { display: flex; justify-content: space-between; align-items: center; min-height: var(--header-h); padding: 0 16px; border-bottom: 1px solid var(--line); }
 .drawer-body { padding: 16px; display: flex; flex-direction: column; gap: 22px; }
-.drawer-group h3 { font-size: .8rem; letter-spacing: .1em; text-transform: uppercase; color: var(--red); margin-bottom: 6px; }
+.drawer-group .drawer-title { font-weight: 700; margin: 0 0 6px;  font-size: .8rem; letter-spacing: .1em; text-transform: uppercase; color: var(--red); margin-bottom: 6px; }
 .drawer-group a { display: block; padding: 12px 0; border-bottom: 1px solid var(--line); text-decoration: none; font-weight: 700; color: var(--navy); font-size: 1.05rem; }
 body.no-scroll { overflow: hidden; }
 
@@ -197,6 +197,22 @@ body { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
 .job-card:hover { border-color: var(--navy); box-shadow: var(--shadow); color: var(--ink); }
 .job-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
 .job-top h3 { min-width: 0; }
+/* Sličica in barva vrste dela (testiranje: več barve in slik) */
+.job-thumb { width: 56px; height: 56px; border-radius: 12px; object-fit: cover; flex: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--k, var(--navy)) 35%, transparent); }
+.job-card { position: relative; overflow: hidden; }
+.job-card::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: var(--k, var(--navy)); }
+/* Barvne ikone hitrih povezav na domači strani */
+.quick-grid .quick:nth-child(1) .ico { background: #e7f0ff; color: #1c64d6; }
+.quick-grid .quick:nth-child(2) .ico { background: #e6f6ec; color: #1f8a4c; }
+.quick-grid .quick:nth-child(3) .ico { background: #fff1e0; color: #d46b08; }
+.quick-grid .quick:nth-child(4) .ico { background: #f2ecff; color: #6a3fd1; }
+.quick-grid .quick:hover .ico { color: var(--white); }
+.quick-grid .quick:nth-child(1):hover .ico { background: #1c64d6; }
+.quick-grid .quick:nth-child(2):hover .ico { background: #1f8a4c; }
+.quick-grid .quick:nth-child(3):hover .ico { background: #d46b08; }
+.quick-grid .quick:nth-child(4):hover .ico { background: #6a3fd1; }
+.tag-kat { background: color-mix(in srgb, var(--k, var(--navy)) 13%, var(--white)); color: color-mix(in srgb, var(--k, var(--navy)) 85%, black); }
+@media (max-width: 420px) { .job-thumb { width: 48px; height: 48px; } }
 .job-code { font-size: .8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 .pay { text-align: right; flex: none; }
 .pay b { display: block; font-family: var(--font-head); font-size: 1.25rem; color: var(--navy); font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -218,6 +234,20 @@ body { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
 @media (min-width: 1024px) { .filter-toggle { display: none; } .filters-panel[hidden] { display: grid !important; } }
 .chip-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
 .chip-row::-webkit-scrollbar { display: none; }
+.chip[style*="--k"][aria-pressed="true"] { background: var(--k); border-color: var(--k); }
+
+/* Dvojni drsnik za plačilo na uro */
+.range { position: relative; height: 34px; }
+.range-track { position: absolute; left: 11px; right: 11px; top: 15px; height: 6px; border-radius: 3px; background: var(--line); }
+.range-fill { position: absolute; top: 0; bottom: 0; left: 0; right: 0; border-radius: 3px; background: linear-gradient(90deg, var(--navy), var(--red)); }
+.range input[type=range] { position: absolute; inset: 0; width: 100%; margin: 0; background: none; pointer-events: none; -webkit-appearance: none; appearance: none; }
+.range input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; pointer-events: auto; width: 24px; height: 24px; border-radius: 50%; background: var(--white); border: 3px solid var(--navy); box-shadow: 0 2px 6px rgba(0,0,0,.2); cursor: grab; }
+.range input[type=range]::-moz-range-thumb { pointer-events: auto; width: 18px; height: 18px; border-radius: 50%; background: var(--white); border: 3px solid var(--navy); cursor: grab; }
+.range input[type=range]::-moz-range-track { background: none; }
+.range input[type=range]:focus-visible::-webkit-slider-thumb { outline: 3px solid var(--yellow-600); outline-offset: 2px; }
+.range-vals { display: flex; justify-content: space-between; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--navy); font-size: .95rem; }
+.fgroup { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
+.fgroup legend { margin-bottom: 6px; padding: 0; }
 .chip { flex: none; border: 1px solid var(--line); background: var(--white); border-radius: 999px; padding: 7px 14px; font-weight: 700; font-size: .9rem; cursor: pointer; color: var(--navy); }
 .chip[aria-pressed="true"] { background: var(--navy); border-color: var(--navy); color: var(--white); }
 .results-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; }
@@ -344,7 +374,9 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: .95rem; min-width
 .footer-brand { grid-column: 1 / -1; display: grid; gap: 12px; }
 @media (min-width: 900px) { .footer-brand { grid-column: auto; } }
 .footer-brand img { height: 46px; width: auto; }
-.site-footer h4 { color: var(--white); font-size: .95rem; margin-bottom: 10px; }
+.site-footer .footer-title { color: var(--white); font-size: .95rem; margin-bottom: 10px; }
+/* Povezave v besedilu noge so podčrtane, da niso ločene samo z barvo (Lighthouse: dostopnost) */
+.footer-bottom a, .footer-bottom .link-btn, .footer-brand a { text-decoration: underline; text-underline-offset: 3px; }
 .site-footer ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; font-size: .95rem; }
 .footer-bottom { margin-top: 32px; padding-top: 18px; border-top: 1px solid rgba(255,255,255,.12); display: grid; gap: 6px; font-size: .84rem; }
 .proto-note { color: var(--yellow); font-weight: 700; }
@@ -479,6 +511,55 @@ input, select, textarea { transition: border-color .2s, box-shadow .2s; }
 
 /* Napredek drsenja pod glavo */
 .scroll-progress { position: absolute; left: 0; bottom: -1px; height: 3px; width: 100%; background: linear-gradient(90deg, var(--red), var(--yellow)); transform-origin: left; transform: scaleX(var(--p, 0)); }
+
+/* =========================================================
+   Temni način (predlog uporabnice Sare Šmon)
+   Privzeto sledi nastavitvi brskalnika; gumb v glavi nastavi data-theme na <html>.
+   --white je v temni temi barva površin, --navy pa svetlo modra za besedilo;
+   elementi z modrim ozadjem dobijo --brand.
+   ========================================================= */
+.theme-toggle { display: inline-flex; align-items: center; justify-content: center; width: 46px; height: 46px; border-radius: 10px; border: 1px solid var(--line); background: var(--white); color: var(--navy); cursor: pointer; }
+.theme-toggle svg { width: 22px; height: 22px; }
+.theme-toggle .sun { display: none; }
+:root[data-theme="dark"] .theme-toggle .sun { display: block; }
+:root[data-theme="dark"] .theme-toggle .moon { display: none; }
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --white: #152131; --bg: #0c1520; --ink: #e3eaf3; --muted: #9fb0c4; --line: #2a3b50;
+  --navy: #9cc3ff; --navy-700: #b8d4ff; --navy-50: #17293f; --brand: #0f4a8a;
+  --red: #ff5c63; --red-50: #3b1c22; --ok: #5fd39a; --ok-50: #11301f; --warn: #f0c264; --warn-50: #332a10;
+  --shadow: 0 6px 24px rgba(0, 0, 0, .35);
+}
+:root[data-theme="dark"] body { background: var(--bg); color: var(--ink); }
+:root[data-theme="dark"] .logo img, :root[data-theme="dark"] .drawer-head img, :root[data-theme="dark"] .form-card > img { content: url("../img/logo_white.svg"); }
+/* Elementi z modrim ozadjem */
+:root[data-theme="dark"] .btn-primary, :root[data-theme="dark"] .page-hero, :root[data-theme="dark"] .result-box,
+:root[data-theme="dark"] .to-top, :root[data-theme="dark"] .chip[aria-pressed="true"]:not([style*="--k"]) { background: var(--brand); }
+:root[data-theme="dark"] .home-hero { background: #08223f; }
+:root[data-theme="dark"] .btn-primary:hover { background: #1660b0; }
+/* Belo besedilo na barvnem ozadju */
+:root[data-theme="dark"] .btn-primary, :root[data-theme="dark"] .btn-red, :root[data-theme="dark"] .page-hero, :root[data-theme="dark"] .page-hero h1,
+:root[data-theme="dark"] .home-hero, :root[data-theme="dark"] .home-hero h1, :root[data-theme="dark"] .result-box, :root[data-theme="dark"] .result-box h3,
+:root[data-theme="dark"] .site-footer .footer-title, :root[data-theme="dark"] .chip[aria-pressed="true"], :root[data-theme="dark"] .badge,
+:root[data-theme="dark"] .to-top, :root[data-theme="dark"] .quick-grid .quick:hover .ico { color: #fff; }
+:root[data-theme="dark"] .btn-red { background: #c8232a; }
+:root[data-theme="dark"] .btn-accent { color: #00264d; }
+:root[data-theme="dark"] .crumbs a { color: #d6e2f0; }
+/* Obrobe in odtenki, ki so bili zapisani kot fiksne barve */
+:root[data-theme="dark"] input[type=text], :root[data-theme="dark"] input[type=email], :root[data-theme="dark"] input[type=password], :root[data-theme="dark"] input[type=tel],
+:root[data-theme="dark"] input[type=number], :root[data-theme="dark"] input[type=date], :root[data-theme="dark"] input[type=search], :root[data-theme="dark"] select,
+:root[data-theme="dark"] textarea, :root[data-theme="dark"] .dropzone { border-color: var(--line); }
+:root[data-theme="dark"] .cookie { border-bottom-color: #4a3d16; }
+:root[data-theme="dark"] .status-banner { border-color: #4a3d16; }
+:root[data-theme="dark"] .status-banner.ok { border-color: #1d4a33; }
+:root[data-theme="dark"] .tag-kat { color: color-mix(in srgb, var(--k, var(--navy)) 55%, white); background: color-mix(in srgb, var(--k, var(--navy)) 22%, var(--white)); }
+:root[data-theme="dark"] .quick-grid .quick:nth-child(1) .ico { background: #16304f; color: #8ab8ff; }
+:root[data-theme="dark"] .quick-grid .quick:nth-child(2) .ico { background: #133423; color: #6fd69b; }
+:root[data-theme="dark"] .quick-grid .quick:nth-child(3) .ico { background: #3a2a12; color: #ffb35c; }
+:root[data-theme="dark"] .quick-grid .quick:nth-child(4) .ico { background: #2a2147; color: #b59cff; }
+:root[data-theme="dark"] .job-card:hover, :root[data-theme="dark"] .quick:hover, :root[data-theme="dark"] .news-card:hover { border-color: var(--navy); }
+:root[data-theme="dark"] .photo img { filter: brightness(.9); }
 
 @media (prefers-reduced-motion: reduce) {
   .js .reveal { opacity: 1; transform: none; }

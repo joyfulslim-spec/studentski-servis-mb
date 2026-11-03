@@ -6,6 +6,19 @@
   "use strict";
   const SS = window.SS;
   document.documentElement.classList.add("js");
+
+  /* Temni način: izbira uporabnika (shranjena) ali nastavitev brskalnika. Nastavi se pred izrisom, da stran ne utripne. */
+  const THEME_KEY = "ssmb-tema";
+  const darkQuery = window.matchMedia ? matchMedia("(prefers-color-scheme: dark)") : null;
+  const storedTheme = () => { try { return localStorage.getItem(THEME_KEY); } catch (e) { return null; } };
+  function applyTheme() {
+    const t = storedTheme() || (darkQuery && darkQuery.matches ? "dark" : "light");
+    document.documentElement.dataset.theme = t;
+    const b = document.querySelector(".theme-toggle");
+    if (b) { b.setAttribute("aria-pressed", String(t === "dark")); b.setAttribute("aria-label", t === "dark" ? "Vklopi svetli način" : "Vklopi temni način"); b.title = b.getAttribute("aria-label"); }
+  }
+  applyTheme();
+  if (darkQuery && darkQuery.addEventListener) darkQuery.addEventListener("change", () => { if (!storedTheme()) applyTheme(); });
   const reduceMotion = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   /* ---------- Pomožne funkcije ---------- */
@@ -145,6 +158,10 @@
       ${SIMPLE.map(x => `<a class="nav-link ${x[0] === here ? "active" : ""}" href="${x[0]}">${x[1]}</a>`).join("")}
     </nav>
     <div class="header-actions">
+      <button class="theme-toggle" type="button" aria-pressed="false" aria-label="Vklopi temni način">
+        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>
+        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      </button>
       ${acc}
       <button class="menu-toggle" aria-label="Odpri meni" aria-expanded="false" aria-controls="drawer">${I.menu}</button>
     </div>
@@ -157,8 +174,8 @@
   </div>
   <div class="drawer-body">
     <a class="btn btn-accent btn-block" href="prosta-dela.html">${I.search} Poišči delo</a>
-    ${NAV.map(g => `<div class="drawer-group"><h3>${g.naslov}</h3>${g.items.map(x => `<a href="${x[0]}">${x[1]}</a>`).join("")}</div>`).join("")}
-    <div class="drawer-group"><h3>Informacije</h3>${SIMPLE.map(x => `<a href="${x[0]}">${x[1]}</a>`).join("")}<a href="o-nas.html">O podjetju</a></div>
+    ${NAV.map(g => `<div class="drawer-group"><p class="drawer-title">${g.naslov}</p>${g.items.map(x => `<a href="${x[0]}">${x[1]}</a>`).join("")}</div>`).join("")}
+    <div class="drawer-group"><p class="drawer-title">Informacije</p>${SIMPLE.map(x => `<a href="${x[0]}">${x[1]}</a>`).join("")}<a href="o-nas.html">O podjetju</a></div>
   </div>
 </div>`;
   }
@@ -173,9 +190,9 @@
         <p class="small">Z vami že od leta 1961. Posredujemo dijaška in študentska dela v Mariboru in vzhodni Sloveniji.</p>
         <p class="small">Gregorčičeva ulica 23, 2000 Maribor</p>
       </div>
-      <div><h4>Za študente</h4><ul>${NAV[0].items.slice(0, 5).map(x => `<li><a href="${x[0]}">${x[1]}</a></li>`).join("")}</ul></div>
-      <div><h4>Za podjetja</h4><ul>${NAV[1].items.map(x => `<li><a href="${x[0]}">${x[1]}</a></li>`).join("")}</ul></div>
-      <div><h4>Servis</h4><ul><li><a href="o-nas.html">O podjetju</a></li><li><a href="poslovalnice.html">Poslovalnice</a></li><li><a href="novice.html">Novice</a></li><li><a href="kontakti.html">Kontakt</a></li></ul></div>
+      <div><h2 class="footer-title">Za študente</h2><ul>${NAV[0].items.slice(0, 5).map(x => `<li><a href="${x[0]}">${x[1]}</a></li>`).join("")}</ul></div>
+      <div><h2 class="footer-title">Za podjetja</h2><ul>${NAV[1].items.map(x => `<li><a href="${x[0]}">${x[1]}</a></li>`).join("")}</ul></div>
+      <div><h2 class="footer-title">Servis</h2><ul><li><a href="o-nas.html">O podjetju</a></li><li><a href="poslovalnice.html">Poslovalnice</a></li><li><a href="novice.html">Novice</a></li><li><a href="kontakti.html">Kontakt</a></li></ul></div>
     </div>
     <div class="footer-bottom">
       <p class="proto-note">Študentski projekt – prototip prenove spletne strani (avtor: Timi Svenšek). To ni uradna stran Študentskega servisa Maribor; podatki o delih, osebah in urnikih so izmišljeni.</p>
@@ -225,6 +242,14 @@
     document.addEventListener("keydown", e => { if (e.key === "Escape") { if (drawer.classList.contains("open")) setDrawer(false); $$(".nav-item.open").forEach(i => i.classList.remove("open")); } });
 
     $$("[data-cookie]").forEach(b => b.addEventListener("click", () => { state.piskotki = b.dataset.cookie; save(); $(".cookie").remove(); }));
+
+    const tt = $(".theme-toggle");
+    tt.addEventListener("click", () => {
+      const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+      try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
+      applyTheme();
+    });
+    applyTheme();
   }
 
   function mountBottom() {
@@ -311,16 +336,19 @@
   }
 
   /* ---------- Skupni gradniki ---------- */
+  const katColor = k => (SS.KAT_BARVE && SS.KAT_BARVE[k]) || "#5a6a7e";
   function jobCard(j) {
     const app = typeof j.id === "number" ? myApplication(j.id) : null;
     const applied = !!app;
-    return `<a class="job-card" href="delo.html?id=${j.id}">
+    // Sličica in barva kategorije (predlog iz testiranja: več barve in slik)
+    return `<a class="job-card" href="delo.html?id=${j.id}" style="--k:${katColor(j.kat)}">
       <div class="job-top">
-        <div class="stack-sm" style="gap:4px;min-width:0"><span class="job-code">Šifra ${j.id} · ${esc(j.objavljeno)}</span><h3>${esc(j.naziv)}</h3></div>
+        <img class="job-thumb" src="img/mini/${esc(j.img || "podjetja.jpg")}" alt="" width="56" height="56" loading="lazy">
+        <div class="stack-sm" style="gap:4px;min-width:0;flex:1"><span class="job-code">Šifra ${j.id} · ${esc(j.objavljeno)}</span><h3>${esc(j.naziv)}</h3></div>
         <div class="pay"><b>${eur(j.urna)}</b><small>na uro, bruto</small></div>
       </div>
       <div class="meta"><span>${I.building}${esc(j.podjetje)}</span><span>${I.pin}${esc(j.kraj)}</span><span>${I.clock}${esc(j.cas)}</span></div>
-      <div class="tags"><span class="tag">${esc(j.kat)}</span>${j.dijaki ? '<span class="tag tag-ok">Tudi za dijake</span>' : ""}${applied ? `<span class="tag ${statusBadge(app.status)}">Prijava: ${esc(app.status.toLowerCase())}</span>` : ""}${j.ownerId ? '<span class="tag tag-red">Novo</span>' : ""}</div>
+      <div class="tags"><span class="tag tag-kat">${esc(j.kat)}</span>${j.dijaki ? '<span class="tag tag-ok">Tudi za dijake</span>' : ""}${applied ? `<span class="tag ${statusBadge(app.status)}">Prijava: ${esc(app.status.toLowerCase())}</span>` : ""}${j.ownerId ? '<span class="tag tag-red">Novo</span>' : ""}</div>
     </a>`;
   }
   const statusText = (u = me()) => !u || !u.status ? "" : u.status.veljaven ? `Status veljaven do ${u.status.do}` : `Status je potekel ${u.status.do}`;
@@ -440,17 +468,41 @@
   };
 
   PAGES.jobs = () => {
-    const f = { q: params.get("q") || "", regija: params.get("regija") || "", kat: params.get("kat") || "", min: params.get("min") || "", dijaki: params.get("dijaki") === "1", sort: params.get("sort") || "novo" };
-    const regSel = $("#fRegija"), katSel = $("#fKat");
+    const list = k => (params.get(k) || "").split(",").filter(Boolean);
+    const f = { q: params.get("q") || "", regija: params.get("regija") || "", kat: params.get("kat") || "", min: params.get("min") || "", max: params.get("max") || "",
+      dijaki: params.get("dijaki") === "1", traj: list("traj"), cas: list("cas"), sort: params.get("sort") || "novo" };
+    const regSel = $("#fRegija"), katSel = $("#fKat"), minR = $("#fMin"), maxR = $("#fMax");
     regSel.innerHTML = `<option value="">Vse regije</option>` + SS.REGIJE.map(r => `<option>${r}</option>`).join("");
     katSel.innerHTML = `<option value="">Vse vrste dela</option>` + SS.KATEGORIJE.map(r => `<option>${r}</option>`).join("");
-    $("#fQ").value = f.q; regSel.value = f.regija; katSel.value = f.kat; $("#fMin").value = f.min; $("#fDijaki").checked = f.dijaki; $("#fSort").value = f.sort;
+    $("#fQ").value = f.q; regSel.value = f.regija; katSel.value = f.kat; $("#fDijaki").checked = f.dijaki; $("#fSort").value = f.sort;
+    if (f.min) minR.value = f.min; if (f.max) maxR.value = f.max;
+    $$("input[name=traj]").forEach(c => c.checked = f.traj.includes(c.value));
+    $$("input[name=cas]").forEach(c => c.checked = f.cas.includes(c.value));
+
+    // Razvrstitev dela po trajanju in delovnem času (iz besedila oglasa)
+    const trajOf = j => { const t = (j.trajanje || "").toLowerCase(); return /enkrat|dni|občasno/.test(t) ? "enkratno" : /mesec/.test(t) ? "kratko" : "dolgo"; };
+    const casOf = j => { const s = `${j.cas} ${j.kraj}`.toLowerCase(); return [
+      /vikend|sobota|nedelja/.test(s) && "vikend", /popoldne|1[6-9][.:]|20[.:]/.test(s) && "popoldne",
+      /fleksib|dogovor/.test(s) && "fleks", /doma/.test(s) && "doma"].filter(Boolean); };
+
+    // Dvojni drsnik za plačilo: ročaja se ne smeta prekrižati, vmes je pobarvan pas
+    const R_MIN = Number(minR.min), R_MAX = Number(minR.max);
+    function syncRange(changed) {
+      let lo = Number(minR.value), hi = Number(maxR.value);
+      if (lo > hi) { if (changed === minR) { minR.value = hi; lo = hi; } else { maxR.value = lo; hi = lo; } }
+      $("#fMinVal").textContent = eur(lo); $("#fMaxVal").textContent = eur(hi) + (hi === R_MAX ? " +" : "");
+      $("#payFill").style.left = ((lo - R_MIN) / (R_MAX - R_MIN) * 100) + "%";
+      $("#payFill").style.right = (100 - (hi - R_MIN) / (R_MAX - R_MIN) * 100) + "%";
+      f.min = lo > R_MIN ? String(lo) : ""; f.max = hi < R_MAX ? String(hi) : "";
+    }
+    [minR, maxR].forEach(r => r.addEventListener("input", () => { syncRange(r); run(); }));
+    syncRange();
 
     const chips = $("#chips");
     const topKats = ["Strežba", "Delo v trgovini", "Računalniška dela, informatika", "Skladiščna dela", "Poučevanje"];
-    // »Za dijake« je prvi gumb, ker ga dijaki na telefonu niso našli v skritih filtrih (testiranje s personami, ugotovitev U1)
+    // »Za dijake« je prvi gumb, ker ga dijaki na telefonu niso našli v skritih filtrih (lastni pregled, U1)
     chips.innerHTML = `<button type="button" class="chip" data-dijaki aria-pressed="${f.dijaki}">Za dijake</button>` +
-      topKats.map(k => `<button type="button" class="chip" data-kat="${k}" aria-pressed="${f.kat === k}">${k.split(",")[0]}</button>`).join("");
+      topKats.map(k => `<button type="button" class="chip" data-kat="${k}" aria-pressed="${f.kat === k}" style="--k:${katColor(k)}">${k.split(",")[0]}</button>`).join("");
     chips.addEventListener("click", e => {
       const c = e.target.closest(".chip"); if (!c) return;
       if ("dijaki" in c.dataset) { f.dijaki = !f.dijaki; $("#fDijaki").checked = f.dijaki; }
@@ -463,27 +515,37 @@
       let list = allJobs().filter(j =>
         (!q || `${j.naziv} ${j.podjetje} ${j.kat} ${j.kraj} ${j.id}`.toLowerCase().includes(q)) &&
         (!f.regija || j.regija === f.regija) && (!f.kat || j.kat === f.kat) &&
-        (!f.min || j.urna >= Number(f.min)) && (!f.dijaki || j.dijaki));
+        (!f.min || j.urna >= Number(f.min)) && (!f.max || j.urna <= Number(f.max)) && (!f.dijaki || j.dijaki) &&
+        (!f.traj.length || f.traj.includes(trajOf(j))) && (!f.cas.length || casOf(j).some(c => f.cas.includes(c))));
       if (f.sort === "urna") list = list.slice().sort((a, b) => b.urna - a.urna);
+      if (f.sort === "urna-asc") list = list.slice().sort((a, b) => a.urna - b.urna);
       $("#count").textContent = list.length;
       const jl = $("#jobList");
       jl.classList.remove("anim-in"); void jl.offsetWidth; jl.classList.add("anim-in");
-      jl.innerHTML = list.length ? list.map((j, k) => jobCard(j).replace('class="job-card"', `class="job-card" style="--i:${Math.min(k, 8)}"`)).join("")
+      jl.innerHTML = list.length ? list.map((j, k) => jobCard(j).replace('style="--k:', `style="--i:${Math.min(k, 8)};--k:`)).join("")
         : `<div class="card empty stack" style="align-items:center"><h3>Ni del, ki ustrezajo izbiri.</h3><p class="muted">Odstrani kakšen filter ali poišči z drugo besedo.</p><button class="btn btn-outline" id="clearAll" type="button">Počisti vse filtre</button></div>`;
       $$(".chip", chips).forEach(c => c.setAttribute("aria-pressed", String("dijaki" in c.dataset ? f.dijaki : c.dataset.kat === f.kat)));
-      const p = new URLSearchParams(); Object.entries(f).forEach(([k, v]) => { if (v && !(k === "sort" && v === "novo")) p.set(k, v === true ? "1" : v); });
+      const p = new URLSearchParams();
+      Object.entries(f).forEach(([k, v]) => { if (Array.isArray(v)) { if (v.length) p.set(k, v.join(",")); } else if (v && !(k === "sort" && v === "novo")) p.set(k, v === true ? "1" : v); });
       history.replaceState(null, "", "prosta-dela.html" + (p.toString() ? "?" + p : ""));
-      const n = [f.regija, f.kat, f.min, f.dijaki].filter(Boolean).length;
+      const n = [f.regija, f.kat, f.min || f.max, f.dijaki].filter(Boolean).length + f.traj.length + f.cas.length;
       $("#filterCount").textContent = n ? `(${n})` : "";
     }
     $("#fQ").addEventListener("input", e => { f.q = e.target.value; run(); });
     regSel.addEventListener("change", e => { f.regija = e.target.value; run(); });
     katSel.addEventListener("change", e => { f.kat = e.target.value; run(); });
-    $("#fMin").addEventListener("change", e => { f.min = e.target.value; run(); });
     $("#fDijaki").addEventListener("change", e => { f.dijaki = e.target.checked; run(); });
+    $$("input[name=traj], input[name=cas]").forEach(c => c.addEventListener("change", () => {
+      f[c.name] = $$(`input[name=${c.name}]:checked`).map(x => x.value); run();
+    }));
     $("#fSort").addEventListener("change", e => { f.sort = e.target.value; run(); });
     $("#searchForm").addEventListener("submit", e => e.preventDefault());
-    document.addEventListener("click", e => { if (e.target.id === "clearAll" || e.target.id === "clearFilters") { Object.assign(f, { q: "", regija: "", kat: "", min: "", dijaki: false }); $("#fQ").value = ""; regSel.value = ""; katSel.value = ""; $("#fMin").value = ""; $("#fDijaki").checked = false; run(); } });
+    document.addEventListener("click", e => {
+      if (e.target.id !== "clearAll" && e.target.id !== "clearFilters") return;
+      Object.assign(f, { q: "", regija: "", kat: "", min: "", max: "", dijaki: false, traj: [], cas: [] });
+      $("#fQ").value = ""; regSel.value = ""; katSel.value = ""; $("#fDijaki").checked = false; minR.value = R_MIN; maxR.value = R_MAX;
+      $$("input[name=traj], input[name=cas]").forEach(c => c.checked = false); syncRange(); run();
+    });
     const panel = $("#filtersPanel"), tgl = $("#filterToggle");
     tgl.addEventListener("click", () => { panel.hidden = !panel.hidden; tgl.setAttribute("aria-expanded", String(!panel.hidden)); });
     run();
@@ -497,7 +559,7 @@
     $("#jPhoto").src = "img/" + (j.img || "podjetja.jpg");
     const list = (t, arr) => arr && arr.length ? `<h3>${t}</h3><ul>${arr.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : "";
     $("#jBody").innerHTML = `
-      <div class="tags"><span class="tag">${esc(j.kat)}</span>${j.dijaki ? '<span class="tag tag-ok">Tudi za dijake</span>' : '<span class="tag tag-warn">Samo za študente</span>'}<span class="tag">Šifra ${j.id}</span>${j.aktiven === false ? '<span class="tag tag-red">Oglas je zaključen</span>' : ""}</div>
+      <div class="tags" style="--k:${katColor(j.kat)}"><span class="tag tag-kat">${esc(j.kat)}</span>${j.dijaki ? '<span class="tag tag-ok">Tudi za dijake</span>' : '<span class="tag tag-warn">Samo za študente</span>'}<span class="tag">Šifra ${j.id}</span>${j.aktiven === false ? '<span class="tag tag-red">Oglas je zaključen</span>' : ""}</div>
       <p style="white-space:pre-line">${esc(j.opis)}</p>
       ${list("Kaj boš delal", j.naloge)}${list("Kaj pričakujemo", j.pogoji)}`;
     $("#jFacts").innerHTML = `<dt>Plačilo</dt><dd>${eur(j.urna)} /h bruto<br><span class="muted small">≈ ${eur(j.urna * (1 - SS.STOPNJE.prispevkiStudent))} /h neto</span></dd>
